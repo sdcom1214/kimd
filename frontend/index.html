@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>City Evolution Simulator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nanum+Gothic:wght@400;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <section id="start-screen" class="screen active">
+        <div class="hero-card">
+          <p class="eyebrow">SDG 11 • Sustainable Cities and Communities</p>
+          <h1>City Evolution Simulator</h1>
+          <p class="hero-copy">
+            Make 6 fast city policy choices and watch your city transform in real time.
+            Build a greener, happier, better-connected future.
+          </p>
+          <div class="hero-pills">
+            <span>Fast booth game</span>
+            <span>6 decisions</span>
+            <span>Instant city changes</span>
+          </div>
+          <button id="start-button" class="primary-button start-button">Start Simulation</button>
+        </div>
+        <div class="hero-preview">
+          <div class="mini-city-card">
+            <div class="mini-sky"></div>
+            <div class="mini-buildings"></div>
+            <div class="mini-park"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="game-screen" class="screen">
+        <header class="game-topbar">
+          <div>
+            <p class="eyebrow">Round Progress</p>
+            <h2 id="round-label">Round 1 / 6</h2>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-track">
+              <div id="progress-fill" class="progress-fill"></div>
+            </div>
+          </div>
+        </header>
+
+        <div class="game-layout">
+          <div class="visual-panel">
+            <div id="city-stage" class="city-stage">
+              <div id="sky-layer" class="layer sky-layer"></div>
+              <div id="smog-layer" class="layer smog-layer"></div>
+              <div id="sun-layer" class="layer sun-layer"></div>
+              <div id="back-buildings" class="layer building-layer back-buildings"></div>
+              <div id="front-buildings" class="layer building-layer front-buildings"></div>
+              <div id="park-layer" class="layer park-layer"></div>
+              <div id="transport-layer" class="layer transport-layer"></div>
+              <div id="road-layer" class="layer road-layer"></div>
+              <div id="happiness-layer" class="layer happiness-layer"></div>
+              <div class="ground-strip"></div>
+            </div>
+
+            <div class="stats-card">
+              <div class="stat-block">
+                <span>Environment</span>
+                <strong id="environment-value">50</strong>
+                <div class="stat-bar"><div id="environment-bar" class="stat-fill environment"></div></div>
+              </div>
+              <div class="stat-block">
+                <span>Transport</span>
+                <strong id="transport-value">50</strong>
+                <div class="stat-bar"><div id="transport-bar" class="stat-fill transport"></div></div>
+              </div>
+              <div class="stat-block">
+                <span>Happiness</span>
+                <strong id="happiness-value">50</strong>
+                <div class="stat-bar"><div id="happiness-bar" class="stat-fill happiness"></div></div>
+              </div>
+              <div class="stat-block">
+                <span>Development</span>
+                <strong id="development-value">50</strong>
+                <div class="stat-bar"><div id="development-bar" class="stat-fill development"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <aside class="question-panel">
+            <p class="eyebrow">Your Decision</p>
+            <h3 id="question-title"></h3>
+            <div id="choices-container" class="choices-container"></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="result-screen" class="screen">
+        <div class="result-layout">
+          <div class="result-visual-panel">
+            <div id="result-city-stage" class="city-stage result-stage">
+              <div id="result-sky-layer" class="layer sky-layer"></div>
+              <div id="result-smog-layer" class="layer smog-layer"></div>
+              <div id="result-sun-layer" class="layer sun-layer"></div>
+              <div id="result-back-buildings" class="layer building-layer back-buildings"></div>
+              <div id="result-front-buildings" class="layer building-layer front-buildings"></div>
+              <div id="result-park-layer" class="layer park-layer"></div>
+              <div id="result-transport-layer" class="layer transport-layer"></div>
+              <div id="result-road-layer" class="layer road-layer"></div>
+              <div id="result-happiness-layer" class="layer happiness-layer"></div>
+              <div class="ground-strip"></div>
+            </div>
+          </div>
+
+          <div class="result-card">
+            <p class="eyebrow">Final Analysis</p>
+            <h2 id="result-city-type">Smart Balanced City</h2>
+            <p id="result-feedback" class="result-feedback"></p>
+            <div id="result-score" class="result-score"></div>
+            <div id="result-stats" class="result-stats"></div>
+
+            <label class="nickname-label" for="nickname-input">Nickname</label>
+            <input id="nickname-input" class="nickname-input" maxlength="20" placeholder="Enter your name" />
+
+            <div class="result-actions">
+              <button id="save-result-button" class="primary-button">Save Result</button>
+              <button id="view-leaderboard-button" class="secondary-button">View Leaderboard</button>
+              <button id="replay-button" class="ghost-button">Replay</button>
+            </div>
+            <p id="save-status" class="save-status"></p>
+          </div>
+        </div>
+      </section>
+
+      <section id="leaderboard-screen" class="screen">
+        <div class="leaderboard-card">
+          <div class="leaderboard-header">
+            <div>
+              <p class="eyebrow">Top City Builders</p>
+              <h2>Leaderboard</h2>
+            </div>
+            <div class="leaderboard-actions">
+              <button id="leaderboard-replay-button" class="secondary-button">Play Again</button>
+              <button id="back-to-start-button" class="ghost-button">Back to Start</button>
+            </div>
+          </div>
+          <div id="leaderboard-content" class="leaderboard-content"></div>
+        </div>
+      </section>
+    </div>
+
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
