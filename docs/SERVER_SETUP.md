@@ -35,13 +35,13 @@ cd /home/superdragon/city-evolution-simulator/backend
 3. Install backend packages:
 
 ```bash
-npm install express cors
+npm install
 ```
 
 4. Start the backend server:
 
 ```bash
-node server.js
+npm start
 ```
 
 ## 2. Example local addresses

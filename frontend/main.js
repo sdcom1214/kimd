@@ -2,103 +2,103 @@ const API_BASE_URL = "http://localhost:3000";
 
 const questions = [
   {
-    prompt: "Traffic congestion is getting worse",
+    prompt: "교통 혼잡이 점점 심해지고 있습니다",
     choices: [
       {
-        text: "Expand roads",
+        text: "도로를 확장한다",
         effects: { transport: 8, development: 10, environment: -8, happiness: -2 },
       },
       {
-        text: "Add more buses",
+        text: "버스를 더 늘린다",
         effects: { transport: 12, environment: 4, happiness: 3 },
       },
       {
-        text: "Build bike lanes",
+        text: "자전거 도로를 만든다",
         effects: { transport: 8, environment: 8, happiness: 4 },
       },
     ],
   },
   {
-    prompt: "The city feels too gray",
+    prompt: "도시 분위기가 너무 삭막하고 회색빛입니다",
     choices: [
       {
-        text: "Build a large park",
+        text: "큰 공원을 만든다",
         effects: { environment: 14, happiness: 8, development: -4 },
       },
       {
-        text: "Build more shopping malls",
+        text: "쇼핑몰을 더 짓는다",
         effects: { development: 14, happiness: 3, environment: -10 },
       },
       {
-        text: "Add rooftop gardens",
+        text: "옥상 정원을 늘린다",
         effects: { environment: 8, development: 5, happiness: 5 },
       },
     ],
   },
   {
-    prompt: "Students say the city is inconvenient",
+    prompt: "학생들이 도시가 불편하다고 말합니다",
     choices: [
       {
-        text: "Improve bus routes",
+        text: "버스 노선을 개선한다",
         effects: { transport: 10, happiness: 6 },
       },
       {
-        text: "Expand parking lots",
+        text: "주차장을 늘린다",
         effects: { development: 8, transport: 5, environment: -6 },
       },
       {
-        text: "Create mixed-use public spaces",
+        text: "복합 공공공간을 만든다",
         effects: { happiness: 10, environment: 5 },
       },
     ],
   },
   {
-    prompt: "Air pollution is increasing",
+    prompt: "대기 오염이 증가하고 있습니다",
     choices: [
       {
-        text: "Restrict cars",
+        text: "자동차 운행을 제한한다",
         effects: { environment: 12, transport: -3, happiness: 2 },
       },
       {
-        text: "Plant trees",
+        text: "나무를 심는다",
         effects: { environment: 10, happiness: 4 },
       },
       {
-        text: "Allow more industrial growth",
+        text: "산업 성장을 더 허용한다",
         effects: { development: 12, environment: -10 },
       },
     ],
   },
   {
-    prompt: "Citizens want more places to relax",
+    prompt: "시민들은 더 많은 휴식 공간을 원합니다",
     choices: [
       {
-        text: "Build a riverside park",
+        text: "강변 공원을 만든다",
         effects: { happiness: 12, environment: 8 },
       },
       {
-        text: "Build apartments",
+        text: "아파트를 더 짓는다",
         effects: { development: 12, happiness: -4 },
       },
       {
-        text: "Create a cultural plaza",
+        text: "문화 광장을 만든다",
         effects: { happiness: 10, development: 4 },
       },
     ],
   },
   {
-    prompt: "Budget is limited",
+    prompt: "예산이 부족합니다",
     choices: [
       {
-        text: "Focus on green projects",
+        text: "친환경 사업에 집중한다",
         effects: { environment: 10, development: -5 },
       },
       {
-        text: "Focus on road expansion",
+        text: "도로 확장에 집중한다",
         effects: { transport: 10, environment: -6 },
       },
       {
-        text: "Balance small upgrades",
+        text: "작은 개선을 균형 있게 한다",
         effects: { environment: 5, transport: 5, happiness: 5, development: 5 },
       },
     ],
@@ -206,16 +206,19 @@ function startGame() {
   stats = createInitialStats();
   nicknameInput.value = "";
   saveStatus.textContent = "";
-  updateStatsUI();
-  updateCityVisual("game");
-  renderQuestion();
   showScreen("game");
+
+  requestAnimationFrame(() => {
+    updateStatsUI();
+    updateCityVisual("game");
+    renderQuestion();
+  });
 }
 
 function renderQuestion() {
   const question = questions[currentRound];
 
-  roundLabel.textContent = `Round ${currentRound + 1} / ${questions.length}`;
+  roundLabel.textContent = `${currentRound + 1} / ${questions.length} 라운드`;
   progressFill.style.width = `${(currentRound / questions.length) * 100}%`;
   questionTitle.textContent = question.prompt;
   choicesContainer.innerHTML = "";
@@ -338,17 +341,17 @@ function renderRoad(transportValue) {
 function renderTransport(transportValue, environmentValue) {
   const busCount = Math.max(0, Math.round((transportValue - 35) / 18));
   const bikeCount = Math.max(0, Math.round((transportValue + environmentValue - 90) / 18));
-  const congestion = transportValue < 45 ? `<div class="traffic-warning">Traffic Jam</div>` : "";
+  const congestion = transportValue < 45 ? `<div class="traffic-warning">교통 정체</div>` : "";
   let html = congestion;
 
   for (let i = 0; i < busCount; i += 1) {
     const left = 10 + i * 20;
-    html += `<div class="bus-icon" style="left:${left}%; top:${44 + (i % 2) * 26}px;">BUS</div>`;
+    html += `<div class="bus-icon" style="left:${left}%; top:${44 + (i % 2) * 26}px;">버스</div>`;
   }
 
   for (let i = 0; i < bikeCount; i += 1) {
     const left = 12 + i * 15;
-    html += `<div class="bike-icon" style="left:${left}%; top:${22 + (i % 2) * 20}px;">BIKE</div>`;
+    html += `<div class="bike-icon" style="left:${left}%; top:${22 + (i % 2) * 20}px;">자전거</div>`;
   }
 
   return html;
@@ -358,7 +361,7 @@ function renderHappiness(happinessValue) {
   const benchCount = Math.max(0, Math.round((happinessValue - 30) / 14));
   const sparkleCount = Math.max(0, Math.round((happinessValue - 50) / 12));
   const showPlaza = happinessValue >= 65;
-  const stress = happinessValue < 40 ? `<div class="stress-warning">Low Mood</div>` : "";
+  const stress = happinessValue < 40 ? `<div class="stress-warning">행복도 낮음</div>` : "";
   let html = stress;
 
   if (showPlaza) {
@@ -389,35 +392,35 @@ function calculateFinalType() {
 
   if (environment >= 70 && happiness >= 70) {
     return {
-      title: "Sustainable Green City",
-      description: "Your city invested in clean air, green spaces, and quality of life. It feels healthy, active, and future-ready.",
+      title: "지속가능한 친환경 도시",
+      description: "깨끗한 공기와 녹지, 시민의 삶의 질을 잘 지켜낸 도시입니다. 건강하고 활기차며 미래지향적인 모습입니다.",
     };
   }
 
   if (development >= 75 && environment <= 45) {
     return {
-      title: "Car-Centered Gray City",
-      description: "Growth happened fast, but nature and air quality were pushed aside. The city is busy, crowded, and heavily road-focused.",
+      title: "자동차 중심의 회색 도시",
+      description: "개발은 빠르게 진행됐지만 자연과 공기 질이 뒤로 밀렸습니다. 도로와 차량 중심의 복잡한 도시가 되었습니다.",
     };
   }
 
   if (balanced) {
     return {
-      title: "Smart Balanced City",
-      description: "You kept the city stable across all four areas. It may not be extreme, but it is practical, flexible, and resilient.",
+      title: "균형 잡힌 스마트 도시",
+      description: "환경, 교통, 행복, 발전을 고르게 관리했습니다. 극단적이진 않지만 안정적이고 지속 가능한 도시입니다.",
     };
   }
 
   if (development >= 75 && happiness <= 45) {
     return {
-      title: "Overdeveloped Stress City",
-      description: "Buildings rose quickly, but people felt the pressure. The city became productive, yet harder to enjoy and live in.",
+      title: "과개발 스트레스 도시",
+      description: "건물과 개발은 빠르게 늘었지만 시민의 만족도는 떨어졌습니다. 효율적이지만 살기 편한 도시는 아닙니다.",
     };
   }
 
   return {
-    title: "Growing Transition City",
-    description: "Your city is still evolving. Some systems improved a lot, but others need more attention before the city feels fully sustainable.",
+    title: "변화 중인 성장 도시",
+    description: "일부 영역은 크게 좋아졌지만 아직 더 다듬을 부분이 남아 있습니다. 발전 가능성이 큰 도시입니다.",
   };
 }
 
@@ -431,11 +434,11 @@ function showResultScreen() {
   progressFill.style.width = "100%";
   resultCityType.textContent = finalType.title;
   resultFeedback.textContent = finalType.description;
-  resultScore.textContent = `Total Score: ${calculateTotalScore()}`;
+  resultScore.textContent = `총점: ${calculateTotalScore()}점`;
   resultStats.innerHTML = Object.entries(stats)
     .map(
       ([name, value]) =>
-        `<div class="result-stat">${capitalize(name)}: <strong>${value}</strong></div>`,
+        `<div class="result-stat">${getStatLabel(name)}: <strong>${value}</strong></div>`,
     )
     .join("");
 
@@ -446,14 +449,14 @@ function showResultScreen() {
 
 async function saveResult() {
   if (hasSavedCurrentRun) {
-    saveStatus.textContent = "This result is already saved. You can replay for a new run.";
+    saveStatus.textContent = "이번 결과는 이미 저장되었습니다. 다시 플레이하면 새 기록을 만들 수 있습니다.";
     return;
   }
 
   const playerName = nicknameInput.value.trim();
 
   if (!playerName) {
-    saveStatus.textContent = "Enter a nickname before saving.";
+    saveStatus.textContent = "저장하기 전에 닉네임을 입력하세요.";
     return;
   }
 
@@ -464,7 +467,7 @@ async function saveResult() {
     totalScore: calculateTotalScore(),
   };
 
-  saveStatus.textContent = "Saving result...";
+  saveStatus.textContent = "결과를 저장하는 중입니다...";
 
   try {
     const response = await fetch(`${API_BASE_URL}/api/result`, {
@@ -480,17 +483,17 @@ async function saveResult() {
     }
 
     hasSavedCurrentRun = true;
-    saveStatus.textContent = "Saved. Opening leaderboard...";
+    saveStatus.textContent = "저장되었습니다. 리더보드를 여는 중입니다...";
     await fetchLeaderboard();
     showScreen("leaderboard");
   } catch (error) {
     console.error(error);
-    saveStatus.textContent = "Could not save result. Check that the backend is running on port 3000.";
+    saveStatus.textContent = "결과를 저장하지 못했습니다. 백엔드 서버가 3000번 포트에서 실행 중인지 확인하세요.";
   }
 }
 
 async function fetchLeaderboard() {
-  leaderboardContent.innerHTML = `<div class="leaderboard-empty">Loading leaderboard...</div>`;
+  leaderboardContent.innerHTML = `<div class="leaderboard-empty">리더보드를 불러오는 중입니다...</div>`;
 
   try {
     const response = await fetch(`${API_BASE_URL}/api/leaderboard`);
@@ -505,8 +508,8 @@ async function fetchLeaderboard() {
     console.error(error);
     leaderboardContent.innerHTML = `
       <div class="leaderboard-empty">
-        Could not load leaderboard.<br />
-        Start the backend server at ${API_BASE_URL}.
+        리더보드를 불러오지 못했습니다.<br />
+        ${API_BASE_URL} 에서 백엔드 서버를 실행하세요.
       </div>
     `;
   }
@@ -516,8 +519,8 @@ function renderLeaderboard(entries) {
   if (!Array.isArray(entries) || entries.length === 0) {
     leaderboardContent.innerHTML = `
       <div class="leaderboard-empty">
-        No saved runs yet.<br />
-        Finish a game and save your result to create the first ranking.
+        아직 저장된 기록이 없습니다.<br />
+        게임을 끝내고 결과를 저장하면 첫 순위가 만들어집니다.
       </div>
     `;
     return;
@@ -540,7 +543,7 @@ function renderLeaderboard(entries) {
 
 function formatEffects(effects) {
   return Object.entries(effects)
-    .map(([name, value]) => `${capitalize(name)} ${value > 0 ? "+" : ""}${value}`)
+    .map(([name, value]) => `${getStatLabel(name)} ${value > 0 ? "+" : ""}${value}`)
     .join(" • ");
 }
 
@@ -548,8 +551,15 @@ function clamp(value) {
   return Math.max(0, Math.min(100, value));
 }
 
-function capitalize(text) {
-  return text.charAt(0).toUpperCase() + text.slice(1);
+function getStatLabel(name) {
+  const labels = {
+    environment: "환경",
+    transport: "교통",
+    happiness: "행복",
+    development: "발전",
+  };
+
+  return labels[name] || name;
 }
 
 function blendColor(colorA, colorB, amount) {
@@ -573,7 +583,7 @@ function hexToRgb(hex) {
 function formatDate(timestamp) {
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) {
-    return "Unknown date";
+    return "알 수 없음";
   }
 
   return date.toLocaleString([], {
