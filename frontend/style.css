@@ -127,7 +127,7 @@ h3 {
   box-shadow: inset 0 0 0 1px rgba(32, 51, 71, 0.14);
 }
 
-#start-screen {
+#start-screen.active {
   display: grid;
   grid-template-columns: var(--layout-main) var(--layout-side);
   align-items: center;
@@ -149,7 +149,7 @@ h3 {
 .hero-card {
   width: 100%;
   min-width: 0;
-  padding: 44px;
+  padding: 44px 56px;
   border-radius: 36px;
 }
 
@@ -160,7 +160,7 @@ h3 {
 
 .hero-copy {
   margin: 18px 0 24px;
-  max-width: 42ch;
+  max-width: 54ch;
   font-size: 1.08rem;
   line-height: 1.6;
 }
@@ -183,6 +183,87 @@ h3 {
 .start-button {
   min-width: 220px;
   font-size: 1.1rem;
+}
+
+.selected-difficulty-label {
+  margin: 0 0 14px;
+  font-weight: 800;
+  color: rgba(26, 50, 73, 0.86);
+}
+
+.difficulty-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(18, 28, 43, 0.48);
+}
+
+.difficulty-modal.active {
+  display: flex;
+}
+
+.difficulty-dialog {
+  width: min(620px, 100%);
+  border-radius: 28px;
+  padding: 28px 38px;
+  backdrop-filter: blur(14px);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 24px 60px rgba(35, 56, 74, 0.24);
+}
+
+.difficulty-dialog h3 {
+  margin: 8px 0 10px;
+  font-size: clamp(1.8rem, 4.2vw, 2.6rem);
+}
+
+.difficulty-copy {
+  margin: 0 0 16px;
+  max-width: 52ch;
+  line-height: 1.5;
+}
+
+.difficulty-options {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.difficulty-option {
+  display: block;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(34, 59, 84, 0.14);
+  background: rgba(250, 253, 255, 0.9);
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.difficulty-option strong,
+.difficulty-option span {
+  display: block;
+}
+
+.difficulty-option strong {
+  margin-bottom: 4px;
+}
+
+.difficulty-option span {
+  color: rgba(34, 59, 84, 0.82);
+}
+
+.difficulty-option:hover {
+  transform: translateY(-1px);
+  border-color: rgba(34, 116, 214, 0.36);
+}
+
+.difficulty-option.selected {
+  border-color: rgba(34, 116, 214, 0.72);
+  box-shadow: 0 10px 20px rgba(34, 116, 214, 0.14);
 }
 
 .hero-preview {
@@ -665,7 +746,7 @@ h3 {
 }
 
 .question-panel {
-  padding: 28px;
+  padding: 28px 40px;
   border-radius: 34px;
   display: flex;
   flex-direction: column;
@@ -675,8 +756,16 @@ h3 {
 
 .question-panel h3 {
   margin: 8px 0 24px;
+  max-width: 22ch;
   font-size: clamp(2rem, 4.8vw, 3.2rem);
   line-height: 1.08;
+  overflow-wrap: anywhere;
+}
+
+.question-panel h3.compact-title {
+  max-width: 34ch;
+  font-size: clamp(1.3rem, 2.8vw, 2rem);
+  line-height: 1.34;
 }
 
 .choices-container {
@@ -685,7 +774,7 @@ h3 {
 }
 
 .choice-button {
-  padding: 18px;
+  padding: 18px 22px;
   text-align: left;
   background: rgba(255, 255, 255, 0.74);
   box-shadow: inset 0 0 0 1px rgba(32, 51, 71, 0.08);
@@ -695,13 +784,115 @@ h3 {
   display: block;
   margin-bottom: 6px;
   font-size: 1.12rem;
+  line-height: 1.45;
+  word-break: normal;
+  overflow-wrap: anywhere;
 }
 
 .choice-button span {
   display: block;
   font-size: 0.95rem;
-  line-height: 1.4;
+  line-height: 1.55;
+  word-break: normal;
+  overflow-wrap: anywhere;
   color: rgba(32, 51, 71, 0.82);
+}
+
+.choice-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.choice-button:hover:not(:disabled) {
+  color: #ffffff !important;
+  background: #111111 !important;
+  border-color: #111111 !important;
+  animation: choice-hover 0.18s ease forwards;
+}
+
+.choice-button:hover:not(:disabled) span {
+  color: #ffffff !important;
+}
+
+.choice-button.is-selected {
+  color: #ffffff !important;
+  background: #111111 !important;
+  border-color: #111111 !important;
+  animation: choice-selected 0.26s ease;
+}
+
+.choice-button.is-selected span {
+  color: #ffffff !important;
+}
+
+.choice-button.is-dim {
+  opacity: 0.32;
+}
+
+.choice-button:disabled {
+  cursor: default;
+}
+
+.difficulty-option:hover {
+  color: #ffffff !important;
+  background: #111111 !important;
+  border-color: #111111 !important;
+  animation: difficulty-hover 0.18s ease forwards;
+}
+
+.difficulty-option:hover span {
+  color: #ffffff !important;
+}
+
+.difficulty-option.selected {
+  color: #ffffff !important;
+  background: #111111 !important;
+  border-color: #111111 !important;
+  animation: difficulty-selected 0.22s ease;
+}
+
+.difficulty-option.selected span {
+  color: #ffffff !important;
+}
+
+@keyframes choice-selected {
+  0% {
+    opacity: 0.65;
+    filter: invert(0.2);
+  }
+  100% {
+    opacity: 1;
+    filter: invert(0);
+  }
+}
+
+@keyframes difficulty-selected {
+  0% {
+    opacity: 0.7;
+    filter: invert(0.25);
+  }
+  100% {
+    opacity: 1;
+    filter: invert(0);
+  }
+}
+
+@keyframes choice-hover {
+  0% {
+    opacity: 0.72;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes difficulty-hover {
+  0% {
+    opacity: 0.72;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .result-card,
@@ -711,7 +902,7 @@ h3 {
 
 .result-card {
   width: 100%;
-  padding: 30px;
+  padding: 30px 40px;
 }
 
 .result-card h2 {
@@ -721,6 +912,7 @@ h3 {
 
 .result-feedback {
   margin: 0 0 18px;
+  max-width: 52ch;
   line-height: 1.6;
 }
 
@@ -838,6 +1030,165 @@ h3 {
   line-height: 1.6;
 }
 
+/* Monochrome + hard-edge theme override */
+:root {
+  --bg: #ffffff;
+  --panel: #ffffff;
+  --panel-strong: #ffffff;
+  --text: #111111;
+  --accent: #111111;
+  --accent-dark: #111111;
+  --secondary: #111111;
+  --sky-top: #ffffff;
+  --sky-bottom: #efefef;
+  --road-color: #1a1a1a;
+  --tree-color: #111111;
+  --stage-glow: transparent;
+  --content-width: 1360px;
+}
+
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+body {
+  color: #111111 !important;
+  background: #ffffff !important;
+}
+
+.app-shell {
+  padding: 24px !important;
+}
+
+.eyebrow {
+  color: #111111 !important;
+}
+
+.hero-card h1,
+.result-card h2,
+.question-panel h3 {
+  color: #111111 !important;
+}
+
+.hero-card,
+.hero-preview,
+.leaderboard-card,
+.result-card,
+.stats-card,
+.question-panel,
+.difficulty-dialog {
+  background: #ffffff !important;
+  border: 1px solid #111111 !important;
+  backdrop-filter: none !important;
+}
+
+.primary-button,
+.secondary-button,
+.ghost-button,
+.choice-button,
+.difficulty-option {
+  color: #111111 !important;
+  background: #ffffff !important;
+  border: 1px solid #111111 !important;
+  transform: none !important;
+}
+
+.difficulty-modal {
+  background: rgba(0, 0, 0, 0.82) !important;
+}
+
+.hero-pills span,
+.result-score,
+.result-stat,
+.save-status,
+.score-chip,
+.rank-chip {
+  color: #111111 !important;
+  background: #ffffff !important;
+  border: 1px solid #111111 !important;
+}
+
+.city-stage,
+.mini-city-card {
+  background: #ffffff !important;
+  border: 1px solid #111111 !important;
+}
+
+.smog-layer,
+.ground-strip,
+.road-layer {
+  background: #ffffff !important;
+}
+
+.building,
+.tree,
+.tree::before,
+.road-base,
+.vehicle,
+.bus-icon,
+.bike-icon,
+.bench,
+.bench::before,
+.bench::after,
+.park-patch,
+.plaza {
+  color: #ffffff !important;
+  background: #111111 !important;
+  filter: none !important;
+}
+
+.building::before,
+.road-base::before {
+  background: #ffffff !important;
+}
+
+.traffic-warning,
+.stress-warning {
+  color: #ffffff !important;
+  background: #111111 !important;
+  border: 1px solid #111111 !important;
+}
+
+.stat-bar {
+  background: #ffffff !important;
+  border: 1px solid #111111 !important;
+}
+
+.stat-fill.environment,
+.stat-fill.transport,
+.stat-fill.happiness,
+.stat-fill.development,
+.progress-fill {
+  background: #111111 !important;
+}
+
+/* Text alignment spacing tune */
+.hero-card,
+.question-panel,
+.result-card,
+.leaderboard-card {
+  padding: 34px 56px !important;
+}
+
+.difficulty-dialog {
+  padding: 30px 48px !important;
+}
+
+.hero-copy,
+.difficulty-copy,
+.result-feedback,
+.question-panel h3 {
+  max-width: 100% !important;
+}
+
+.choice-button {
+  padding: 16px 22px !important;
+}
+
 @media (max-width: 980px) {
   #start-screen,
   .game-layout,
@@ -859,7 +1210,7 @@ h3 {
 
 @media (max-width: 720px) {
   .app-shell {
-    padding: 14px;
+    padding: 18px !important;
   }
 
   .screen {
@@ -870,8 +1221,23 @@ h3 {
   .question-panel,
   .result-card,
   .leaderboard-card {
-    padding: 22px;
+    padding: 20px !important;
     border-radius: 26px;
+  }
+
+  .difficulty-dialog {
+    padding: 20px !important;
+    border-radius: 22px;
+  }
+
+  .question-panel h3 {
+    max-width: 100%;
+  }
+
+  .question-panel h3.compact-title {
+    max-width: 100%;
+    font-size: clamp(1.15rem, 6.2vw, 1.6rem);
+    line-height: 1.36;
   }
 
   .city-stage {

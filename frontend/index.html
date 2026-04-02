@@ -27,7 +27,30 @@
             <span>6번의 선택</span>
             <span>즉시 도시 변화</span>
           </div>
+          <p id="selected-difficulty-label" class="selected-difficulty-label">난이도: 선택 필요</p>
           <button id="start-button" class="primary-button start-button">게임 시작</button>
+        </div>
+        <div id="difficulty-modal" class="difficulty-modal" role="dialog" aria-modal="true" aria-labelledby="difficulty-title">
+          <div class="difficulty-dialog">
+            <p class="eyebrow">게임 시작 전</p>
+            <h3 id="difficulty-title">난이도를 선택하세요</h3>
+            <p class="difficulty-copy">난이도가 높을수록 선택 결과가 덜 예측 가능해집니다.</p>
+            <div id="difficulty-options" class="difficulty-options">
+              <button type="button" class="difficulty-option" data-difficulty="easy">
+                <strong>쉬움</strong>
+                <span>효과 방향(상승/하락)만 보입니다</span>
+              </button>
+              <button type="button" class="difficulty-option" data-difficulty="normal">
+                <strong>보통</strong>
+                <span>효과 수치는 숨겨지고 결과가 약간 흔들립니다</span>
+              </button>
+              <button type="button" class="difficulty-option" data-difficulty="hard">
+                <strong>어려움</strong>
+                <span>효과 정보가 거의 보이지 않고 변동폭이 큽니다</span>
+              </button>
+            </div>
+            <button id="confirm-difficulty-button" class="primary-button" disabled>이 난이도로 시작</button>
+          </div>
         </div>
         <div class="hero-preview">
           <div class="mini-city-card">

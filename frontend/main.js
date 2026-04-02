@@ -1,109 +1,343 @@
-const API_BASE_URL = "http://localhost:3000";
+const API_BASE_URL = resolveApiBaseUrl();
 
-const questions = [
-  {
-    prompt: "교통 혼잡이 점점 심해지고 있습니다",
-    choices: [
-      {
-        text: "도로를 확장한다",
-        effects: { transport: 8, development: 10, environment: -8, happiness: -2 },
-      },
-      {
-        text: "버스를 더 늘린다",
-        effects: { transport: 12, environment: 4, happiness: 3 },
-      },
-      {
-        text: "자전거 도로를 만든다",
-        effects: { transport: 8, environment: 8, happiness: 4 },
-      },
-    ],
+const QUESTION_SETS = {
+  easy: [
+    {
+      prompt: "등교 시간 학교 앞이 자주 막힙니다",
+      choices: [
+        {
+          text: "학교 앞 300m 구간에 보행 우선 신호를 도입한다",
+          effects: { transport: 7, happiness: 7, environment: 2 },
+        },
+        {
+          text: "학부모 차량 임시 정차 구역을 새로 만든다",
+          effects: { transport: 5, development: 4, environment: -2 },
+        },
+        {
+          text: "통학버스 노선을 늘리고 탑승 안내를 강화한다",
+          effects: { transport: 8, happiness: 5, environment: 4 },
+        },
+      ],
+    },
+    {
+      prompt: "동네 공원이 낡아 시민 이용이 줄었습니다",
+      choices: [
+        {
+          text: "그늘 쉼터와 벤치를 늘린다",
+          effects: { happiness: 8, environment: 5, development: -1 },
+        },
+        {
+          text: "야간 조명과 산책로를 정비한다",
+          effects: { happiness: 7, transport: 3, development: 2 },
+        },
+        {
+          text: "공원 일부를 주차장으로 전환한다",
+          effects: { transport: 5, development: 5, environment: -7, happiness: -2 },
+        },
+      ],
+    },
+    {
+      prompt: "버스 정류장 환경이 불편하다는 민원이 많습니다",
+      choices: [
+        {
+          text: "정류장에 실시간 도착 안내판을 설치한다",
+          effects: { transport: 8, happiness: 4, development: 2 },
+        },
+        {
+          text: "정류장 지붕과 의자를 전면 교체한다",
+          effects: { happiness: 8, transport: 4, development: 1 },
+        },
+        {
+          text: "예산 절감을 위해 최소 보수만 진행한다",
+          effects: { development: 3, transport: 1, happiness: -4 },
+        },
+      ],
+    },
+    {
+      prompt: "도심 미세먼지 수치가 최근 상승했습니다",
+      choices: [
+        {
+          text: "대기오염 취약 구역에 가로수를 추가 식재한다",
+          effects: { environment: 9, happiness: 4, development: -1 },
+        },
+        {
+          text: "친환경 청소차와 물청소 주기를 늘린다",
+          effects: { environment: 8, transport: 3, happiness: 2 },
+        },
+        {
+          text: "산업 물류 차량 통행을 허용해 물량을 맞춘다",
+          effects: { development: 7, environment: -7, happiness: -2 },
+        },
+      ],
+    },
+    {
+      prompt: "주말마다 시민들이 여가공간 부족을 호소합니다",
+      choices: [
+        {
+          text: "하천변에 소규모 휴식공간을 만든다",
+          effects: { happiness: 9, environment: 6, development: -1 },
+        },
+        {
+          text: "주민센터 유휴공간을 문화공간으로 바꾼다",
+          effects: { happiness: 8, development: 3, transport: 2 },
+        },
+        {
+          text: "상업시설 확장으로 소비 편의를 우선한다",
+          effects: { development: 8, happiness: 1, environment: -4 },
+        },
+      ],
+    },
+    {
+      prompt: "올해 예산이 줄어 우선 사업을 정해야 합니다",
+      choices: [
+        {
+          text: "노후 시설 안전 점검과 보수에 집중한다",
+          effects: { transport: 6, happiness: 5, development: 2 },
+        },
+        {
+          text: "기초 복지와 생활환경 개선을 우선한다",
+          effects: { happiness: 7, environment: 5, development: -1 },
+        },
+        {
+          text: "개발 사업 중심으로 세수 확대를 노린다",
+          effects: { development: 8, transport: 2, environment: -4, happiness: -2 },
+        },
+      ],
+    },
+  ],
+  normal: [
+    {
+      prompt: "출근 시간(07:30~09:30) 중앙대로 평균 통행속도가 시속 16km로 떨어졌습니다",
+      choices: [
+        {
+          text: "중앙대로 2km 구간에 버스전용차로를 설치한다",
+          effects: { transport: 11, environment: 4, happiness: 2, development: -2 },
+        },
+        {
+          text: "교차로 6곳 신호를 재설계해 직진 흐름을 우선한다",
+          effects: { transport: 8, development: 5, environment: -4, happiness: -1 },
+        },
+        {
+          text: "도심 주차요금을 2배 인상하고 환승주차장을 늘린다",
+          effects: { transport: 7, environment: 6, happiness: -3, development: 1 },
+        },
+      ],
+    },
+    {
+      prompt: "여름철 폭염일수가 늘어 보행자 열사병 신고가 급증했습니다",
+      choices: [
+        {
+          text: "초등학교 주변 12개 블록에 그늘수목을 집중 식재한다",
+          effects: { environment: 10, happiness: 8, development: -2 },
+        },
+        {
+          text: "보행로 바닥을 고반사 포장으로 교체한다",
+          effects: { environment: 7, transport: 2, happiness: 5, development: 1 },
+        },
+        {
+          text: "냉방 지원 예산을 확대하고 녹지 사업은 축소한다",
+          effects: { happiness: 6, development: 4, environment: -6 },
+        },
+      ],
+    },
+    {
+      prompt: "대중교통 순환율이 낮아 환승 대기 불만이 커졌습니다",
+      choices: [
+        {
+          text: "버스 도착정보 오차를 줄이는 통합 관제 시스템을 구축한다",
+          effects: { transport: 10, happiness: 5, development: 3 },
+        },
+        {
+          text: "지하철 환승 동선을 개편해 도보 이동거리를 줄인다",
+          effects: { transport: 8, happiness: 7, development: -1 },
+        },
+        {
+          text: "혼잡 노선 대신 외곽 신규노선 확장에 집중한다",
+          effects: { development: 9, transport: 4, happiness: -2, environment: -3 },
+        },
+      ],
+    },
+    {
+      prompt: "산업단지 인근 PM2.5 수치가 권고 기준을 반복 초과했습니다",
+      choices: [
+        {
+          text: "배출량 상위 공장 20곳에 저감설비 의무화를 시행한다",
+          effects: { environment: 12, development: -4, happiness: 3 },
+        },
+        {
+          text: "산업단지 물류를 철도 중심으로 전환한다",
+          effects: { environment: 9, transport: 6, development: -2, happiness: 1 },
+        },
+        {
+          text: "규제를 완화해 공장 가동률을 우선 회복한다",
+          effects: { development: 11, environment: -9, happiness: -2 },
+        },
+      ],
+    },
+    {
+      prompt: "청년층 이주율이 떨어져 도심 공동화 조짐이 나타났습니다",
+      choices: [
+        {
+          text: "공공임대 주택과 창업공간을 결합한 복합지구를 조성한다",
+          effects: { happiness: 8, development: 8, environment: -2 },
+        },
+        {
+          text: "소규모 문화공간과 야간 대중교통을 동시에 확대한다",
+          effects: { happiness: 10, transport: 6, development: 2 },
+        },
+        {
+          text: "민간 대형 상업시설 유치에 행정 자원을 집중한다",
+          effects: { development: 10, happiness: -3, environment: -4 },
+        },
+      ],
+    },
+    {
+      prompt: "재정 여력이 줄어 내년도 도시 예산을 선택과 집중해야 합니다",
+      choices: [
+        {
+          text: "노후 상하수도와 도로 유지보수에 우선 배정한다",
+          effects: { transport: 7, happiness: 5, development: 2 },
+        },
+        {
+          text: "기후 대응 인프라(빗물저류·도심숲)를 우선 투자한다",
+          effects: { environment: 11, happiness: 6, development: -3 },
+        },
+        {
+          text: "세금 인상 없이 민간투자 사업으로만 추진한다",
+          effects: { development: 9, transport: 3, environment: -5, happiness: -2 },
+        },
+      ],
+    },
+  ],
+  hard: [
+    {
+      prompt: "광역철도 연계사업과 도심 재개발 일정이 충돌해 교통혼잡과 상권 반발이 동시에 커졌습니다",
+      choices: [
+        {
+          text: "재개발 일정 일부를 연기하고 환승체계부터 완성한다",
+          effects: { transport: 12, happiness: 4, development: -4 },
+        },
+        {
+          text: "공사를 병행하되 공사구간 통행료를 탄력 적용한다",
+          effects: { transport: 7, development: 7, happiness: -3, environment: -2 },
+        },
+        {
+          text: "재개발을 우선해 세수 확보 후 교통대책을 추진한다",
+          effects: { development: 11, transport: -2, happiness: -4, environment: -3 },
+        },
+      ],
+    },
+    {
+      prompt: "폭우 빈도가 높아져 상습 침수지와 열섬 지역이 겹치는 복합 재난 위험이 증가했습니다",
+      choices: [
+        {
+          text: "침수저감 인프라와 도심숲을 묶은 복합 사업으로 전환한다",
+          effects: { environment: 12, happiness: 5, development: -3, transport: 2 },
+        },
+        {
+          text: "배수관 확충에 집중하고 녹지 조성은 민간에 맡긴다",
+          effects: { transport: 8, development: 6, environment: -3, happiness: -1 },
+        },
+        {
+          text: "재난 대응 예산을 분산 집행해 단기 민원부터 처리한다",
+          effects: { happiness: 2, development: 3, environment: -5, transport: -2 },
+        },
+      ],
+    },
+    {
+      prompt: "대중교통 적자가 누적되며 요금 인상 요구와 서비스 질 하락이 동시에 발생했습니다",
+      choices: [
+        {
+          text: "요금은 동결하고 혼잡 노선에만 선택적 증편을 시행한다",
+          effects: { happiness: 6, transport: 7, development: -2 },
+        },
+        {
+          text: "요금을 인상하되 저소득층 이동 바우처를 도입한다",
+          effects: { development: 5, transport: 6, happiness: -1, environment: 2 },
+        },
+        {
+          text: "요금 정상화와 민간 위탁 확대를 동시에 추진한다",
+          effects: { development: 9, transport: 4, happiness: -4, environment: -2 },
+        },
+      ],
+    },
+    {
+      prompt: "산업단지 고용 유지를 위해 규제 완화 압박이 커졌지만 건강영향 조사 결과는 악화 추세입니다",
+      choices: [
+        {
+          text: "강한 배출 규제를 유지하고 친환경 전환 보조금을 연계한다",
+          effects: { environment: 11, happiness: 4, development: -3 },
+        },
+        {
+          text: "규제 유예를 허용하되 주민 모니터링 위원회를 구성한다",
+          effects: { development: 6, happiness: 1, environment: -3, transport: 2 },
+        },
+        {
+          text: "규제를 일괄 완화해 단기 고용 지표를 방어한다",
+          effects: { development: 12, environment: -10, happiness: -3 },
+        },
+      ],
+    },
+    {
+      prompt: "구도심 공동화와 외곽 난개발이 동시에 진행되며 생활권 불균형이 심화되고 있습니다",
+      choices: [
+        {
+          text: "구도심 생활SOC와 공공주택을 결합한 재생축을 만든다",
+          effects: { happiness: 8, development: 6, environment: 3, transport: 2 },
+        },
+        {
+          text: "외곽 신도시 인허가를 확대해 공급 속도를 높인다",
+          effects: { development: 10, transport: 2, environment: -5, happiness: -2 },
+        },
+        {
+          text: "생활권 통합을 위해 핵심 거점만 선택 집중 개발한다",
+          effects: { development: 7, transport: 5, happiness: 1, environment: -1 },
+        },
+      ],
+    },
+    {
+      prompt: "국비 지원 축소로 필수사업을 줄여야 하는데, 시민은 서비스 유지와 세금 동결을 동시에 요구합니다",
+      choices: [
+        {
+          text: "필수 인프라 유지에 집중하고 신규 사업은 전면 재검토한다",
+          effects: { transport: 7, happiness: 3, development: -2, environment: 2 },
+        },
+        {
+          text: "탄소 감축 사업만 보호하고 나머지 예산을 단계 축소한다",
+          effects: { environment: 10, development: -3, happiness: 2, transport: 1 },
+        },
+        {
+          text: "민자 사업 비중을 높여 단기 재정 부담을 낮춘다",
+          effects: { development: 8, transport: 3, environment: -4, happiness: -3 },
+        },
+      ],
+    },
+  ],
+};
+
+const DIFFICULTY_LEVELS = {
+  easy: {
+    label: "쉬움",
+    previewMode: "direction",
+    variance: 0,
+    sideEffectChance: 0,
+    sideEffectRange: [0, 0],
   },
-  {
-    prompt: "도시 분위기가 너무 삭막하고 회색빛입니다",
-    choices: [
-      {
-        text: "큰 공원을 만든다",
-        effects: { environment: 14, happiness: 8, development: -4 },
-      },
-      {
-        text: "쇼핑몰을 더 짓는다",
-        effects: { development: 14, happiness: 3, environment: -10 },
-      },
-      {
-        text: "옥상 정원을 늘린다",
-        effects: { environment: 8, development: 5, happiness: 5 },
-      },
-    ],
+  normal: {
+    label: "보통",
+    previewMode: "direction",
+    variance: 2,
+    sideEffectChance: 0.25,
+    sideEffectRange: [1, 3],
   },
-  {
-    prompt: "학생들이 도시가 불편하다고 말합니다",
-    choices: [
-      {
-        text: "버스 노선을 개선한다",
-        effects: { transport: 10, happiness: 6 },
-      },
-      {
-        text: "주차장을 늘린다",
-        effects: { development: 8, transport: 5, environment: -6 },
-      },
-      {
-        text: "복합 공공공간을 만든다",
-        effects: { happiness: 10, environment: 5 },
-      },
-    ],
+  hard: {
+    label: "어려움",
+    previewMode: "none",
+    variance: 4,
+    sideEffectChance: 0.55,
+    sideEffectRange: [2, 6],
   },
-  {
-    prompt: "대기 오염이 증가하고 있습니다",
-    choices: [
-      {
-        text: "자동차 운행을 제한한다",
-        effects: { environment: 12, transport: -3, happiness: 2 },
-      },
-      {
-        text: "나무를 심는다",
-        effects: { environment: 10, happiness: 4 },
-      },
-      {
-        text: "산업 성장을 더 허용한다",
-        effects: { development: 12, environment: -10 },
-      },
-    ],
-  },
-  {
-    prompt: "시민들은 더 많은 휴식 공간을 원합니다",
-    choices: [
-      {
-        text: "강변 공원을 만든다",
-        effects: { happiness: 12, environment: 8 },
-      },
-      {
-        text: "아파트를 더 짓는다",
-        effects: { development: 12, happiness: -4 },
-      },
-      {
-        text: "문화 광장을 만든다",
-        effects: { happiness: 10, development: 4 },
-      },
-    ],
-  },
-  {
-    prompt: "예산이 부족합니다",
-    choices: [
-      {
-        text: "친환경 사업에 집중한다",
-        effects: { environment: 10, development: -5 },
-      },
-      {
-        text: "도로 확장에 집중한다",
-        effects: { transport: 10, environment: -6 },
-      },
-      {
-        text: "작은 개선을 균형 있게 한다",
-        effects: { environment: 5, transport: 5, happiness: 5, development: 5 },
-      },
-    ],
-  },
-];
+};
 
 const screens = {
   start: document.getElementById("start-screen"),
@@ -158,6 +392,10 @@ const roundLabel = document.getElementById("round-label");
 const progressFill = document.getElementById("progress-fill");
 const questionTitle = document.getElementById("question-title");
 const choicesContainer = document.getElementById("choices-container");
+const difficultyModal = document.getElementById("difficulty-modal");
+const difficultyOptions = Array.from(document.querySelectorAll(".difficulty-option"));
+const confirmDifficultyButton = document.getElementById("confirm-difficulty-button");
+const selectedDifficultyLabel = document.getElementById("selected-difficulty-label");
 const resultCityType = document.getElementById("result-city-type");
 const resultFeedback = document.getElementById("result-feedback");
 const resultStats = document.getElementById("result-stats");
@@ -168,22 +406,37 @@ const leaderboardContent = document.getElementById("leaderboard-content");
 
 let currentRound = 0;
 let hasSavedCurrentRun = false;
+let currentDifficulty = "";
+let activeQuestions = [];
 let stats = createInitialStats();
 
-document.getElementById("start-button").addEventListener("click", startGame);
-document.getElementById("replay-button").addEventListener("click", startGame);
-document.getElementById("leaderboard-replay-button").addEventListener("click", startGame);
+document.getElementById("start-button").addEventListener("click", beginDifficultySelection);
+document.getElementById("replay-button").addEventListener("click", beginDifficultySelection);
+document.getElementById("leaderboard-replay-button").addEventListener("click", beginDifficultySelection);
 document.getElementById("back-to-start-button").addEventListener("click", () => showScreen("start"));
 document.getElementById("view-leaderboard-button").addEventListener("click", async () => {
   await fetchLeaderboard();
   showScreen("leaderboard");
 });
 document.getElementById("save-result-button").addEventListener("click", saveResult);
+confirmDifficultyButton.addEventListener("click", () => {
+  if (!currentDifficulty) {
+    return;
+  }
+  startGame();
+});
+
+difficultyOptions.forEach((button) => {
+  button.addEventListener("click", () => {
+    selectDifficulty(button.dataset.difficulty);
+  });
+});
 
 showScreen("start");
 updateStatsUI();
 updateCityVisual("game");
 updateCityVisual("result");
+updateSelectedDifficultyLabel();
 
 function createInitialStats() {
   return {
@@ -201,9 +454,16 @@ function showScreen(screenName) {
 }
 
 function startGame() {
+  if (!currentDifficulty) {
+    openDifficultyModal();
+    return;
+  }
+
+  closeDifficultyModal();
   currentRound = 0;
   hasSavedCurrentRun = false;
   stats = createInitialStats();
+  activeQuestions = QUESTION_SETS[currentDifficulty] || QUESTION_SETS.normal;
   nicknameInput.value = "";
   saveStatus.textContent = "";
   showScreen("game");
@@ -215,20 +475,61 @@ function startGame() {
   });
 }
 
-function renderQuestion() {
-  const question = questions[currentRound];
+function beginDifficultySelection() {
+  currentDifficulty = "";
+  confirmDifficultyButton.disabled = true;
+  difficultyOptions.forEach((button) => {
+    button.classList.remove("selected");
+  });
+  updateSelectedDifficultyLabel();
+  openDifficultyModal();
+}
 
-  roundLabel.textContent = `${currentRound + 1} / ${questions.length} 라운드`;
-  progressFill.style.width = `${(currentRound / questions.length) * 100}%`;
+function renderQuestion() {
+  const question = activeQuestions[currentRound];
+  const totalRounds = activeQuestions.length;
+  const difficulty = DIFFICULTY_LEVELS[currentDifficulty];
+  const roundChoices = question.choices.map((choice) => {
+    const effects = applyDifficultyToEffects(choice.effects, difficulty);
+    const summary = getChoiceSummary(effects, difficulty.previewMode);
+    return { ...choice, effects, summary };
+  });
+
+  roundLabel.textContent = `${currentRound + 1} / ${totalRounds} 라운드 · ${difficulty.label}`;
+  progressFill.style.width = `${(currentRound / totalRounds) * 100}%`;
+  questionTitle.classList.toggle("compact-title", currentDifficulty === "hard");
   questionTitle.textContent = question.prompt;
   choicesContainer.innerHTML = "";
+  let hasPickedChoice = false;
 
-  question.choices.forEach((choice) => {
+  roundChoices.forEach((choice) => {
     const button = document.createElement("button");
     button.className = "choice-button";
-    const summary = formatEffects(choice.effects);
-    button.innerHTML = `<strong>${choice.text}</strong><span>${summary}</span>`;
-    button.addEventListener("click", () => applyChoiceEffects(choice.effects));
+    button.innerHTML = `<strong>${choice.text}</strong><span>${choice.summary}</span>`;
+    button.addEventListener("click", () => {
+      if (hasPickedChoice) {
+        return;
+      }
+
+      hasPickedChoice = true;
+      const buttons = Array.from(choicesContainer.querySelectorAll(".choice-button"));
+
+      buttons.forEach((item) => {
+        item.disabled = true;
+        item.classList.add("is-locked");
+      });
+
+      button.classList.add("is-selected");
+      buttons.forEach((item) => {
+        if (item !== button) {
+          item.classList.add("is-dim");
+        }
+      });
+
+      window.setTimeout(() => {
+        applyChoiceEffects(choice.effects);
+      }, 260);
+    });
     choicesContainer.appendChild(button);
   });
 }
@@ -243,7 +544,7 @@ function applyChoiceEffects(effects) {
 
   currentRound += 1;
 
-  if (currentRound >= questions.length) {
+  if (currentRound >= activeQuestions.length) {
     showResultScreen();
     return;
   }
@@ -547,6 +848,83 @@ function formatEffects(effects) {
     .join(" • ");
 }
 
+function getChoiceSummary(effects, previewMode) {
+  if (previewMode === "exact") {
+    return formatEffects(effects);
+  }
+
+  if (previewMode === "direction") {
+    return Object.entries(effects)
+      .map(([name, value]) => `${getStatLabel(name)} ${value > 0 ? "상승" : "하락"}`)
+      .join(" • ");
+  }
+
+  return "결과를 예측하기 어렵습니다.";
+}
+
+function applyDifficultyToEffects(baseEffects, difficulty) {
+  const adjusted = {};
+  const variance = difficulty.variance || 0;
+
+  Object.entries(baseEffects).forEach(([statName, delta]) => {
+    let value = delta;
+
+    if (variance > 0) {
+      value += getRandomInt(-variance, variance);
+    }
+
+    if (delta > 0) {
+      value = Math.max(1, value);
+    } else if (delta < 0) {
+      value = Math.min(-1, value);
+    }
+
+    adjusted[statName] = value;
+  });
+
+  if (difficulty.sideEffectChance > 0 && Math.random() < difficulty.sideEffectChance) {
+    const statNames = Object.keys(statElements);
+    const targetStat = statNames[getRandomInt(0, statNames.length - 1)];
+    const [minPenalty, maxPenalty] = difficulty.sideEffectRange;
+    const penalty = -getRandomInt(minPenalty, maxPenalty);
+    adjusted[targetStat] = (adjusted[targetStat] || 0) + penalty;
+  }
+
+  return adjusted;
+}
+
+function openDifficultyModal() {
+  difficultyModal.classList.add("active");
+}
+
+function closeDifficultyModal() {
+  difficultyModal.classList.remove("active");
+}
+
+function selectDifficulty(level) {
+  if (!DIFFICULTY_LEVELS[level]) {
+    return;
+  }
+
+  currentDifficulty = level;
+  confirmDifficultyButton.disabled = false;
+
+  difficultyOptions.forEach((button) => {
+    button.classList.toggle("selected", button.dataset.difficulty === level);
+  });
+
+  updateSelectedDifficultyLabel();
+}
+
+function updateSelectedDifficultyLabel() {
+  if (!currentDifficulty) {
+    selectedDifficultyLabel.textContent = "난이도: 선택 필요";
+    return;
+  }
+
+  selectedDifficultyLabel.textContent = `난이도: ${DIFFICULTY_LEVELS[currentDifficulty].label}`;
+}
+
 function clamp(value) {
   return Math.max(0, Math.min(100, value));
 }
@@ -601,4 +979,30 @@ function escapeHtml(text) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function getRandomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function resolveApiBaseUrl() {
+  if (typeof window === "undefined") {
+    return "http://localhost:3000";
+  }
+
+  if (typeof window.CITY_API_BASE_URL === "string" && window.CITY_API_BASE_URL.trim()) {
+    return window.CITY_API_BASE_URL.trim().replace(/\/+$/, "");
+  }
+
+  const storedBase = window.localStorage.getItem("CITY_API_BASE_URL");
+  if (storedBase && storedBase.trim()) {
+    return storedBase.trim().replace(/\/+$/, "");
+  }
+
+  const { hostname } = window.location;
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    return "http://localhost:3000";
+  }
+
+  return "";
 }
