@@ -113,4 +113,38 @@ const API_BASE_URL = "https://your-domain.com";
 - Run the backend as a Node.js process.
 - Connect both with the same domain later using a reverse proxy.
 
+## 6. Render deployment (Blueprint)
+
+This repository now includes a root `render.yaml`.
+
+- Backend service:
+  - type: `web`
+  - root: `backend/`
+  - health check: `/api/health`
+- Frontend service:
+  - type: `static` (`type: web`, `runtime: static`)
+  - root: `frontend/`
+  - publish path: `dist`
+  - SPA rewrite: `/* -> /index.html`
+
+### Deploy steps
+
+1. Commit and push `render.yaml` to your Git remote.
+2. Open Render Blueprint:
+   - `https://dashboard.render.com/blueprint/new?repo=<YOUR_HTTPS_REPO_URL>`
+3. Click **Apply** in Render Dashboard.
+4. After deploy, open:
+   - Backend health: `https://<api-service>.onrender.com/api/health`
+   - Frontend site: `https://<frontend-service>.onrender.com`
+
+### API URL behavior in frontend
+
+- Priority order:
+  1. `VITE_API_BASE_URL` (build-time)
+  2. `window.CITY_API_BASE_URL`
+  3. `localStorage.CITY_API_BASE_URL`
+  4. local fallback (`http://localhost:3000`) only on localhost
+
+So for Render static deploy, no manual browser setup is required when `VITE_API_BASE_URL` is provided by Blueprint.
+
 This structure is simple for local testing now and easy to expand later.

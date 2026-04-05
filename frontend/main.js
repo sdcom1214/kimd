@@ -391,7 +391,9 @@ const statElements = {
 const roundLabel = document.getElementById("round-label");
 const progressFill = document.getElementById("progress-fill");
 const questionTitle = document.getElementById("question-title");
+const choiceHelper = document.getElementById("choice-helper");
 const choicesContainer = document.getElementById("choices-container");
+const currentDifficultyBadge = document.getElementById("current-difficulty-badge");
 const difficultyModal = document.getElementById("difficulty-modal");
 const difficultyOptions = Array.from(document.querySelectorAll(".difficulty-option"));
 const confirmDifficultyButton = document.getElementById("confirm-difficulty-button");
@@ -477,6 +479,7 @@ function startGame() {
 
 function beginDifficultySelection() {
   currentDifficulty = "";
+  currentDifficultyBadge.textContent = "선택 필요";
   confirmDifficultyButton.disabled = true;
   difficultyOptions.forEach((button) => {
     button.classList.remove("selected");
@@ -497,8 +500,10 @@ function renderQuestion() {
 
   roundLabel.textContent = `${currentRound + 1} / ${totalRounds} 라운드 · ${difficulty.label}`;
   progressFill.style.width = `${(currentRound / totalRounds) * 100}%`;
+  currentDifficultyBadge.textContent = difficulty.label;
   questionTitle.classList.toggle("compact-title", currentDifficulty === "hard");
   questionTitle.textContent = question.prompt;
+  choiceHelper.textContent = getDifficultyGuideText(currentDifficulty);
   choicesContainer.innerHTML = "";
   let hasPickedChoice = false;
 
@@ -789,7 +794,7 @@ async function saveResult() {
     showScreen("leaderboard");
   } catch (error) {
     console.error(error);
-    saveStatus.textContent = "결과를 저장하지 못했습니다. 백엔드 서버가 3000번 포트에서 실행 중인지 확인하세요.";
+    saveStatus.textContent = `결과를 저장하지 못했습니다. API 서버 주소(${API_BASE_URL || "미설정"})를 확인하세요.`;
   }
 }
 
@@ -990,13 +995,20 @@ function resolveApiBaseUrl() {
     return "http://localhost:3000";
   }
 
+  if (typeof import.meta !== "undefined" && import.meta.env && typeof import.meta.env.VITE_API_BASE_URL === "string") {
+    const envBase = sanitizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
+    if (envBase) {
+      return envBase;
+    }
+  }
+
   if (typeof window.CITY_API_BASE_URL === "string" && window.CITY_API_BASE_URL.trim()) {
-    return window.CITY_API_BASE_URL.trim().replace(/\/+$/, "");
+    return sanitizeApiBaseUrl(window.CITY_API_BASE_URL);
   }
 
   const storedBase = window.localStorage.getItem("CITY_API_BASE_URL");
   if (storedBase && storedBase.trim()) {
-    return storedBase.trim().replace(/\/+$/, "");
+    return sanitizeApiBaseUrl(storedBase);
   }
 
   const { hostname } = window.location;
@@ -1005,4 +1017,37 @@ function resolveApiBaseUrl() {
   }
 
   return "";
+}
+
+function sanitizeApiBaseUrl(rawValue) {
+  const value = String(rawValue || "").trim().replace(/\/+$/, "");
+  if (!value) {
+    return "";
+  }
+
+  if (value.startsWith("http://") || value.startsWith("https://")) {
+    return value;
+  }
+
+  if (value.startsWith("localhost") || value.startsWith("127.0.0.1")) {
+    return `http://${value}`;
+  }
+
+  return `https://${value}`;
+}
+
+function getDifficultyGuideText(level) {
+  if (level === "easy") {
+    return "효과 방향(상승/하락)이 보입니다. 입문용으로 가장 직관적입니다.";
+  }
+
+  if (level === "normal") {
+    return "수치가 숨겨지고 결과가 조금 흔들립니다. 균형 잡힌 플레이에 적합합니다.";
+  }
+
+  if (level === "hard") {
+    return "효과 정보가 거의 숨겨집니다. 리스크를 감수하고 전략적으로 선택하세요.";
+  }
+
+  return "선택하면 즉시 도시 상태가 반영됩니다.";
 }
