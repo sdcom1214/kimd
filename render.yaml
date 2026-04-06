@@ -15,7 +15,6 @@ services:
   - type: web
     name: city-evolution-web
     runtime: static
-    plan: free
     branch: main
     rootDir: frontend
     buildCommand: npm ci && npm run build
