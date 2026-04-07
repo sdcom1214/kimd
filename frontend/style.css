@@ -1,19 +1,19 @@
 :root {
-  --bg: #f8f4df;
-  --panel: rgba(255, 249, 234, 0.88);
-  --panel-strong: #fff8e8;
-  --text: #203347;
-  --accent: #ff8a3d;
-  --accent-dark: #d05d19;
-  --secondary: #2fbf8f;
-  --sky-top: #89d6ff;
-  --sky-bottom: #d7f5ff;
-  --road-color: #556274;
+  --bg: #ececec;
+  --panel: rgba(248, 248, 248, 0.9);
+  --panel-strong: #ffffff;
+  --text: #1f1f1f;
+  --accent: #2c2c2c;
+  --accent-dark: #111111;
+  --secondary: #4f4f4f;
+  --sky-top: #d5d5d5;
+  --sky-bottom: #efefef;
+  --road-color: #5d5d5d;
   --road-marking-opacity: 0.7;
-  --tree-color: #4aa95d;
+  --tree-color: #7a7a7a;
   --smog-opacity: 0;
   --traffic-density: 0.35;
-  --stage-glow: rgba(255, 193, 91, 0.24);
+  --stage-glow: rgba(255, 255, 255, 0.18);
   --content-width: 1180px;
   --layout-main: minmax(0, 1.35fr);
   --layout-side: minmax(340px, 0.95fr);
@@ -23,15 +23,22 @@
   box-sizing: border-box;
 }
 
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
   font-family: "Pretendard Variable", "Pretendard", "SUIT Variable", "SUIT", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   color: var(--text);
   background:
-    radial-gradient(circle at top left, rgba(255, 172, 87, 0.35), transparent 35%),
-    radial-gradient(circle at right, rgba(70, 190, 145, 0.24), transparent 30%),
-    linear-gradient(160deg, #fef6d8 0%, #ffe7bc 45%, #d5f1ea 100%);
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.4), transparent 35%),
+    radial-gradient(circle at right, rgba(198, 198, 198, 0.2), transparent 30%),
+    linear-gradient(160deg, #f2f2f2 0%, #e8e8e8 45%, #dcdcdc 100%);
+  filter: grayscale(1);
 }
 
 button,
@@ -107,16 +114,16 @@ h3 {
   padding: 16px 24px;
   font-weight: 800;
   color: white;
-  background: linear-gradient(135deg, var(--accent) 0%, #ffb248 100%);
-  box-shadow: 0 12px 24px rgba(255, 138, 61, 0.28);
+  background: linear-gradient(135deg, #2c2c2c 0%, #111111 100%);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.28);
 }
 
 .secondary-button {
   padding: 14px 20px;
   font-weight: 700;
   color: white;
-  background: linear-gradient(135deg, #1f9dd1 0%, #43d5c8 100%);
-  box-shadow: 0 10px 22px rgba(38, 149, 209, 0.24);
+  background: linear-gradient(135deg, #5a5a5a 0%, #2f2f2f 100%);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.2);
 }
 
 .ghost-button {
@@ -258,12 +265,12 @@ h3 {
 
 .difficulty-option:hover {
   transform: translateY(-1px);
-  border-color: rgba(34, 116, 214, 0.36);
+  border-color: rgba(0, 0, 0, 0.36);
 }
 
 .difficulty-option.selected {
-  border-color: rgba(34, 116, 214, 0.72);
-  box-shadow: 0 10px 20px rgba(34, 116, 214, 0.14);
+  border-color: rgba(0, 0, 0, 0.72);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18);
 }
 
 .hero-preview {
@@ -1057,11 +1064,11 @@ h3 {
 }
 
 .rank-chip {
-  background: linear-gradient(135deg, #ffd45f, #ff9d57);
+  background: linear-gradient(135deg, #e8e8e8, #bcbcbc);
 }
 
 .score-chip {
-  background: rgba(56, 176, 127, 0.16);
+  background: rgba(0, 0, 0, 0.12);
 }
 
 .leaderboard-empty {

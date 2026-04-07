@@ -992,7 +992,7 @@ function getRandomInt(min, max) {
 
 function resolveApiBaseUrl() {
   if (typeof window === "undefined") {
-    return "http://localhost:3000";
+    return "http://localhost:3100";
   }
 
   if (typeof import.meta !== "undefined" && import.meta.env && typeof import.meta.env.VITE_API_BASE_URL === "string") {
@@ -1013,7 +1013,7 @@ function resolveApiBaseUrl() {
 
   const { hostname } = window.location;
   if (hostname === "localhost" || hostname === "127.0.0.1") {
-    return "http://localhost:3000";
+    return "http://localhost:3100";
   }
 
   return "";

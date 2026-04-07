@@ -47,8 +47,8 @@ npm start
 ## 2. Example local addresses
 
 - Frontend: `http://localhost:5173`
-- Backend: `http://localhost:3000`
-- Health check: `http://localhost:3000/api/health`
+- Backend: `http://localhost:3100`
+- Health check: `http://localhost:3100/api/health`
 
 ## 3. How leaderboard data is stored
 
@@ -68,7 +68,7 @@ npm start
 - Right now it uses:
 
 ```js
-const API_BASE_URL = "http://localhost:3000";
+const API_BASE_URL = "http://localhost:3100";
 ```
 
 - Later, change that to your real backend domain or server address.
@@ -143,7 +143,7 @@ This repository now includes a root `render.yaml`.
   1. `VITE_API_BASE_URL` (build-time)
   2. `window.CITY_API_BASE_URL`
   3. `localStorage.CITY_API_BASE_URL`
-  4. local fallback (`http://localhost:3000`) only on localhost
+  4. local fallback (`http://localhost:3100`) only on localhost
 
 So for Render static deploy, no manual browser setup is required when `VITE_API_BASE_URL` is provided by Blueprint.
 

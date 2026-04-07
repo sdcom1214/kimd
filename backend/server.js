@@ -5,7 +5,7 @@ const path = require("path");
 const Database = require("better-sqlite3");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3100;
 const DATA_DIR = path.join(__dirname, "data");
 const DB_FILE = path.join(DATA_DIR, "leaderboard.db");
 const LEGACY_DATA_FILE = path.join(DATA_DIR, "leaderboard.json");
