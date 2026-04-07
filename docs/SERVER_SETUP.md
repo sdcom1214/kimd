@@ -1,150 +1,79 @@
-# City Evolution Simulator - Server Setup
+# City Evolution Simulator 서버 실행 가이드
 
-## 1. How to run locally
+## 1. 로컬 실행 방법
 
-### Frontend
-
-1. Open a terminal.
-2. Move to the frontend folder:
-
+### 프론트엔드
+1. 터미널에서 `frontend` 폴더로 이동
 ```bash
 cd /home/superdragon/city-evolution-simulator/frontend
 ```
-
-3. Install Vite:
-
+2. 의존성 설치
 ```bash
 npm install
 ```
-
-4. Start the frontend dev server:
-
+3. 개발 서버 실행
 ```bash
 npm run dev
 ```
 
-### Backend
-
-1. Open another terminal.
-2. Move to the backend folder:
-
+### 백엔드
+1. 다른 터미널에서 `backend` 폴더로 이동
 ```bash
 cd /home/superdragon/city-evolution-simulator/backend
 ```
-
-3. Install backend packages:
-
+2. 의존성 설치
 ```bash
 npm install
 ```
-
-4. Start the backend server:
-
+3. 서버 실행
 ```bash
 npm start
 ```
 
-## 2. Example local addresses
+## 2. 로컬 접속 주소
+- 프론트엔드: `http://localhost:5173`
+- 백엔드: `http://localhost:3100`
+- 헬스체크: `http://localhost:3100/api/health`
 
-- Frontend: `http://localhost:5173`
-- Backend: `http://localhost:3100`
-- Health check: `http://localhost:3100/api/health`
+## 3. 리더보드 데이터 저장 방식
+- 백엔드는 결과를 SQLite로 저장합니다.
+- DB 파일 위치: `backend/data/leaderboard.db`
+- 기존 JSON 파일(`backend/data/leaderboard.json`)이 있으면 서버 시작 시 마이그레이션됩니다.
 
-## 3. How leaderboard data is stored
-
-- The backend saves results in `backend/data/leaderboard.json`.
-- Each saved run includes:
-  - nickname
-  - final city type
-  - 4 stats
-  - total score
-  - save time
-- The backend sorts the leaderboard by highest total score first.
-- If the JSON file does not exist, the server creates it automatically.
-
-## 4. What to change later when deploying
-
-- Update the frontend API address in `frontend/main.js`.
-- Right now it uses:
-
+## 4. 배포 시 수정할 항목
+- 프론트 API 주소 설정(`frontend/main.js`)
+- 현재 로컬 기본값:
 ```js
 const API_BASE_URL = "http://localhost:3100";
 ```
-
-- Later, change that to your real backend domain or server address.
-- Example:
-
+- 배포 시 예시:
 ```js
 const API_BASE_URL = "https://your-domain.com";
 ```
 
-## 5. Basic deployment preparation notes
+## 5. 배포 준비 체크리스트
+- 도메인 연결 여부
+- 리버스 프록시 설정(`/` 프론트, `/api` 백엔드)
+- 백엔드 프로세스 매니저(PM2 등) 적용
+- 환경별 포트/CORS/API 주소 확인
 
-### Domain connection
+## 6. Render 배포(선택)
+이 저장소에는 루트 `render.yaml`이 포함되어 있습니다.
 
-- A domain is the website address people type in the browser.
-- Later, you can connect your domain so users open the frontend with a real address like `https://your-domain.com`.
+- 백엔드 서비스: `backend/`, 헬스체크 `/api/health`
+- 프론트 서비스: `frontend/`, 빌드 결과 `dist`, SPA rewrite `/* -> /index.html`
 
-### Reverse proxy
-
-- A reverse proxy is a server tool that sends browser requests to the correct app.
-- Example idea:
-  - requests to `/` go to the frontend
-  - requests to `/api` go to the Express backend
-- Popular reverse proxy tools include Nginx and Caddy.
-
-### Process manager
-
-- A process manager keeps the backend running even if the server restarts or the app crashes.
-- A common example is PM2.
-- It helps restart `node server.js` automatically.
-
-### Environment or config values to update
-
-- Backend port if your host uses a different port
-- Frontend API base URL
-- Domain name
-- CORS settings if frontend and backend use different domains
-
-## Simple project idea for deployment
-
-- Keep `frontend/` and `backend/` separate.
-- Build the frontend and serve it with a web server.
-- Run the backend as a Node.js process.
-- Connect both with the same domain later using a reverse proxy.
-
-## 6. Render deployment (Blueprint)
-
-This repository now includes a root `render.yaml`.
-
-- Backend service:
-  - type: `web`
-  - root: `backend/`
-  - health check: `/api/health`
-- Frontend service:
-  - type: `static` (`type: web`, `runtime: static`)
-  - root: `frontend/`
-  - publish path: `dist`
-  - SPA rewrite: `/* -> /index.html`
-
-### Deploy steps
-
-1. Commit and push `render.yaml` to your Git remote.
-2. Open Render Blueprint:
+### 배포 절차
+1. `render.yaml`을 포함해 Git 원격 저장소에 푸시
+2. Render Blueprint 열기
    - `https://dashboard.render.com/blueprint/new?repo=<YOUR_HTTPS_REPO_URL>`
-3. Click **Apply** in Render Dashboard.
-4. After deploy, open:
-   - Backend health: `https://<api-service>.onrender.com/api/health`
-   - Frontend site: `https://<frontend-service>.onrender.com`
+3. Dashboard에서 **Apply**
+4. 배포 후 주소 확인
+   - 백엔드: `https://<api-service>.onrender.com/api/health`
+   - 프론트: `https://<frontend-service>.onrender.com`
 
-### API URL behavior in frontend
-
-- Priority order:
-  1. `VITE_API_BASE_URL` (build-time)
-  2. `window.CITY_API_BASE_URL`
-  3. `localStorage.CITY_API_BASE_URL`
-  4. local fallback (`http://localhost:3100`) only on localhost
-
-So for Render static deploy, no manual browser setup is required when `VITE_API_BASE_URL` is provided by Blueprint.
-
-This structure is simple for local testing now and easy to expand later.
+## 7. 프론트 API 주소 결정 우선순위
+1. `VITE_API_BASE_URL` (빌드 타임)
+2. `window.CITY_API_BASE_URL`
+3. `localStorage.CITY_API_BASE_URL`
+4. 로컬 fallback (`http://localhost:3100`, localhost에서만)

@@ -1,4 +1,5 @@
-# Auto Upload Test
+# 자동 업로드 테스트 기록
 
-- Created at (UTC): 2026-04-07T12:05:06Z
-- Purpose: verify git-auto-upload skill end-to-end (commit + push)
+- 생성 시각(UTC): `2026-04-07T12:05:06Z`
+- 목적: `git-auto-upload` 스킬의 커밋 + 푸시 동작을 종단 간으로 확인
+- 결과: 테스트 완료
