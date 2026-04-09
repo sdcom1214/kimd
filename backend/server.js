@@ -28,16 +28,31 @@ app.get("/api/leaderboard", (req, res) => {
   try {
     const limit = parseLimit(req.query.limit);
     const records = loadRecords();
+    const grouped = {
+      easy: [],
+      normal: [],
+      hard: [],
+    };
+
     const sorted = records
       .sort((a, b) => {
         if (b.totalScore !== a.totalScore) {
           return b.totalScore - a.totalScore;
         }
         return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-      })
-      .slice(0, limit);
+      });
 
-    res.json(sorted);
+    for (const entry of sorted) {
+      const difficulty = normalizeDifficulty(entry.difficulty);
+      if (grouped[difficulty].length < limit) {
+        grouped[difficulty].push({
+          ...entry,
+          difficulty,
+        });
+      }
+    }
+
+    res.json(grouped);
   } catch (error) {
     console.error("Failed to read leaderboard:", error);
     res.status(500).json({ error: "Could not read leaderboard data." });
@@ -55,6 +70,7 @@ app.post("/api/result", (req, res) => {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       playerName: req.body.playerName.trim(),
       cityType: req.body.cityType.trim(),
+      difficulty: normalizeDifficulty(req.body.difficulty),
       totalScore: clampNumber(req.body.totalScore, 0, 400),
       stats: sanitizeStats(req.body.stats),
       timestamp: new Date().toISOString(),
@@ -150,6 +166,10 @@ function validateResult(body) {
     return { valid: false, message: "totalScore must be numeric." };
   }
 
+  if (body.difficulty !== undefined && !isValidDifficulty(body.difficulty)) {
+    return { valid: false, message: "difficulty must be one of easy, normal, hard." };
+  }
+
   return { valid: true };
 }
 
@@ -168,4 +188,15 @@ function clampNumber(value, min, max) {
     return min;
   }
   return Math.max(min, Math.min(max, Math.round(numeric)));
+}
+
+function isValidDifficulty(value) {
+  return ["easy", "normal", "hard"].includes(String(value || "").trim());
+}
+
+function normalizeDifficulty(value) {
+  if (isValidDifficulty(value)) {
+    return String(value).trim();
+  }
+  return "normal";
 }

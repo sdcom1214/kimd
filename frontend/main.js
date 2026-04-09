@@ -771,6 +771,7 @@ async function saveResult() {
     playerName,
     stats,
     cityType: calculateFinalType().title,
+    difficulty: currentDifficulty || "normal",
     totalScore: calculateTotalScore(),
   };
 
@@ -823,7 +824,11 @@ async function fetchLeaderboard() {
 }
 
 function renderLeaderboard(entries) {
-  if (!Array.isArray(entries) || entries.length === 0) {
+  const difficultyOrder = ["easy", "normal", "hard"];
+  const groupedEntries = normalizeLeaderboardEntries(entries);
+  const hasAnyEntry = difficultyOrder.some((difficulty) => groupedEntries[difficulty].length > 0);
+
+  if (!hasAnyEntry) {
     leaderboardContent.innerHTML = `
       <div class="leaderboard-empty">
         아직 저장된 기록이 없습니다.<br />
@@ -833,19 +838,76 @@ function renderLeaderboard(entries) {
     return;
   }
 
-  leaderboardContent.innerHTML = entries
-    .map(
-      (entry, index) => `
-        <article class="leaderboard-row">
-          <div class="rank-chip">#${index + 1}</div>
-          <strong>${escapeHtml(entry.playerName)}</strong>
-          <span>${escapeHtml(entry.cityType)}</span>
-          <div class="score-chip">${entry.totalScore}</div>
-          <span>${formatDate(entry.timestamp)}</span>
-        </article>
-      `,
-    )
+  leaderboardContent.innerHTML = difficultyOrder
+    .map((difficulty) => {
+      const sectionEntries = groupedEntries[difficulty];
+
+      if (sectionEntries.length === 0) {
+        return `
+          <section class="leaderboard-section">
+            <h3 class="leaderboard-section-title">${DIFFICULTY_LEVELS[difficulty].label}</h3>
+            <div class="leaderboard-empty">아직 저장된 기록이 없습니다.</div>
+          </section>
+        `;
+      }
+
+      const rows = sectionEntries
+        .map(
+          (entry, index) => `
+            <article class="leaderboard-row">
+              <div class="rank-chip">#${index + 1}</div>
+              <strong>${escapeHtml(entry.playerName)}</strong>
+              <span>${escapeHtml(entry.cityType)}</span>
+              <div class="score-chip">${entry.totalScore}</div>
+              <span>${formatDate(entry.timestamp)}</span>
+            </article>
+          `,
+        )
+        .join("");
+
+      return `
+        <section class="leaderboard-section">
+          <h3 class="leaderboard-section-title">${DIFFICULTY_LEVELS[difficulty].label}</h3>
+          ${rows}
+        </section>
+      `;
+    })
     .join("");
+}
+
+function normalizeLeaderboardEntries(entries) {
+  const grouped = {
+    easy: [],
+    normal: [],
+    hard: [],
+  };
+
+  if (Array.isArray(entries)) {
+    entries.forEach((entry) => {
+      const difficulty = normalizeDifficultyValue(entry.difficulty);
+      grouped[difficulty].push(entry);
+    });
+    return grouped;
+  }
+
+  if (!entries || typeof entries !== "object") {
+    return grouped;
+  }
+
+  Object.keys(grouped).forEach((difficulty) => {
+    if (Array.isArray(entries[difficulty])) {
+      grouped[difficulty] = entries[difficulty];
+    }
+  });
+
+  return grouped;
+}
+
+function normalizeDifficultyValue(value) {
+  if (value === "easy" || value === "normal" || value === "hard") {
+    return value;
+  }
+  return "normal";
 }
 
 function formatEffects(effects) {

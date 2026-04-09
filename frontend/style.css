@@ -1038,6 +1038,18 @@ h3 {
   gap: 12px;
 }
 
+.leaderboard-section {
+  display: grid;
+  gap: 10px;
+}
+
+.leaderboard-section-title {
+  margin: 4px 2px 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #223b50;
+}
+
 .leaderboard-row,
 .leaderboard-empty {
   display: grid;
