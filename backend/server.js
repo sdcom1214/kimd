@@ -6,7 +6,8 @@ const Database = require("better-sqlite3");
 
 const app = express();
 const PORT = process.env.PORT || 3100;
-const DATA_DIR = path.join(__dirname, "data");
+const IS_VERCEL = Boolean(process.env.VERCEL);
+const DATA_DIR = IS_VERCEL ? path.join("/tmp", "city-evolution-simulator-data") : path.join(__dirname, "data");
 const DB_FILE = path.join(DATA_DIR, "leaderboard.db");
 const LEGACY_DATA_FILE = path.join(DATA_DIR, "leaderboard.json");
 
@@ -116,19 +117,23 @@ app.post("/api/result", (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`City Evolution Simulator backend running on http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`City Evolution Simulator backend running on http://localhost:${PORT}`);
+  });
 
-process.on("SIGINT", () => {
-  db.close();
-  process.exit(0);
-});
+  process.on("SIGINT", () => {
+    db.close();
+    process.exit(0);
+  });
 
-process.on("SIGTERM", () => {
-  db.close();
-  process.exit(0);
-});
+  process.on("SIGTERM", () => {
+    db.close();
+    process.exit(0);
+  });
+}
+
+module.exports = app;
 
 function ensureDataDir() {
   if (!fs.existsSync(DATA_DIR)) {

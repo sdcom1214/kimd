@@ -1016,7 +1016,7 @@ function resolveApiBaseUrl() {
     return "http://localhost:3100";
   }
 
-  return "";
+  return "/_/backend";
 }
 
 function sanitizeApiBaseUrl(rawValue) {
