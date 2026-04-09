@@ -1052,12 +1052,8 @@ async function requestApi(pathname, options) {
         return response;
       }
 
-      if (response.status === 404) {
-        lastResponse = response;
-        continue;
-      }
-
-      return response;
+      lastResponse = response;
+      continue;
     } catch (error) {
       lastError = error;
     }
