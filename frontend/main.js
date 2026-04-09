@@ -418,7 +418,7 @@ let hasSavedCurrentRun = false;
 let currentDifficulty = "";
 let activeQuestions = [];
 let stats = createInitialStats();
-let isPerfectRouteActive = true;
+let selectedChoiceIndexes = [];
 
 document.getElementById("start-button").addEventListener("click", beginDifficultySelection);
 document.getElementById("replay-button").addEventListener("click", beginDifficultySelection);
@@ -472,7 +472,7 @@ function startGame() {
   closeDifficultyModal();
   currentRound = 0;
   hasSavedCurrentRun = false;
-  isPerfectRouteActive = true;
+  selectedChoiceIndexes = [];
   stats = createInitialStats();
   activeQuestions = QUESTION_SETS[currentDifficulty] || QUESTION_SETS.normal;
   nicknameInput.value = "";
@@ -490,7 +490,7 @@ function beginDifficultySelection() {
   // The difficulty modal lives inside the start screen, so make it visible first.
   showScreen("start");
   currentDifficulty = "";
-  isPerfectRouteActive = true;
+  selectedChoiceIndexes = [];
   currentDifficultyBadge.textContent = "선택 필요";
   confirmDifficultyButton.disabled = true;
   difficultyOptions.forEach((button) => {
@@ -554,9 +554,7 @@ function renderQuestion() {
 }
 
 function applyChoiceEffects(effects, choiceIndex) {
-  if (!isPerfectChoiceForCurrentRound(choiceIndex)) {
-    isPerfectRouteActive = false;
-  }
+  selectedChoiceIndexes.push(choiceIndex);
 
   Object.entries(effects).forEach(([statName, delta]) => {
     stats[statName] = clamp(stats[statName] + delta);
@@ -753,7 +751,8 @@ function calculateTotalScore() {
 }
 
 function showResultScreen() {
-  if (isPerfectRouteActive && hasPerfectRouteForDifficulty(currentDifficulty)) {
+  const isPerfectRoute = isPerfectRouteForRun();
+  if (isPerfectRoute) {
     stats = {
       environment: 100,
       transport: 100,
@@ -766,7 +765,7 @@ function showResultScreen() {
 
   progressFill.style.width = "100%";
   resultCityType.textContent = finalType.title;
-  resultFeedback.textContent = isPerfectRouteActive && hasPerfectRouteForDifficulty(currentDifficulty)
+  resultFeedback.textContent = isPerfectRoute
     ? `${finalType.description} 만점 루트를 달성했습니다.`
     : finalType.description;
   resultScore.textContent = `총점: ${calculateTotalScore()}점`;
@@ -787,12 +786,17 @@ function hasPerfectRouteForDifficulty(difficulty) {
   return Array.isArray(route) && route.length === activeQuestions.length;
 }
 
-function isPerfectChoiceForCurrentRound(choiceIndex) {
-  const route = PERFECT_ROUTE_CHOICES[currentDifficulty];
-  if (!Array.isArray(route)) {
+function isPerfectRouteForRun() {
+  if (!hasPerfectRouteForDifficulty(currentDifficulty)) {
     return false;
   }
-  return route[currentRound] === choiceIndex;
+
+  const route = PERFECT_ROUTE_CHOICES[currentDifficulty];
+  if (!Array.isArray(route) || selectedChoiceIndexes.length !== route.length) {
+    return false;
+  }
+
+  return route.every((expectedIndex, roundIndex) => selectedChoiceIndexes[roundIndex] === expectedIndex);
 }
 
 async function saveResult() {
