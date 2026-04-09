@@ -340,6 +340,12 @@ const DIFFICULTY_LEVELS = {
   },
 };
 
+const PERFECT_ROUTE_CHOICES = {
+  easy: [2, 0, 0, 0, 0, 1],
+  normal: [0, 0, 0, 1, 1, 1],
+  hard: [0, 0, 0, 0, 0, 0],
+};
+
 const screens = {
   start: document.getElementById("start-screen"),
   game: document.getElementById("game-screen"),
@@ -412,6 +418,7 @@ let hasSavedCurrentRun = false;
 let currentDifficulty = "";
 let activeQuestions = [];
 let stats = createInitialStats();
+let isPerfectRouteActive = true;
 
 document.getElementById("start-button").addEventListener("click", beginDifficultySelection);
 document.getElementById("replay-button").addEventListener("click", beginDifficultySelection);
@@ -465,6 +472,7 @@ function startGame() {
   closeDifficultyModal();
   currentRound = 0;
   hasSavedCurrentRun = false;
+  isPerfectRouteActive = true;
   stats = createInitialStats();
   activeQuestions = QUESTION_SETS[currentDifficulty] || QUESTION_SETS.normal;
   nicknameInput.value = "";
@@ -479,14 +487,19 @@ function startGame() {
 }
 
 function beginDifficultySelection() {
+  // The difficulty modal lives inside the start screen, so make it visible first.
+  showScreen("start");
   currentDifficulty = "";
+  isPerfectRouteActive = true;
   currentDifficultyBadge.textContent = "선택 필요";
   confirmDifficultyButton.disabled = true;
   difficultyOptions.forEach((button) => {
     button.classList.remove("selected");
   });
   updateSelectedDifficultyLabel();
-  openDifficultyModal();
+  requestAnimationFrame(() => {
+    openDifficultyModal();
+  });
 }
 
 function renderQuestion() {
@@ -508,7 +521,7 @@ function renderQuestion() {
   choicesContainer.innerHTML = "";
   let hasPickedChoice = false;
 
-  roundChoices.forEach((choice) => {
+  roundChoices.forEach((choice, choiceIndex) => {
     const button = document.createElement("button");
     button.className = "choice-button";
     button.innerHTML = `<strong>${choice.text}</strong><span>${choice.summary}</span>`;
@@ -533,14 +546,18 @@ function renderQuestion() {
       });
 
       window.setTimeout(() => {
-        applyChoiceEffects(choice.effects);
+        applyChoiceEffects(choice.effects, choiceIndex);
       }, 260);
     });
     choicesContainer.appendChild(button);
   });
 }
 
-function applyChoiceEffects(effects) {
+function applyChoiceEffects(effects, choiceIndex) {
+  if (!isPerfectChoiceForCurrentRound(choiceIndex)) {
+    isPerfectRouteActive = false;
+  }
+
   Object.entries(effects).forEach(([statName, delta]) => {
     stats[statName] = clamp(stats[statName] + delta);
   });
@@ -736,11 +753,22 @@ function calculateTotalScore() {
 }
 
 function showResultScreen() {
+  if (isPerfectRouteActive && hasPerfectRouteForDifficulty(currentDifficulty)) {
+    stats = {
+      environment: 100,
+      transport: 100,
+      happiness: 100,
+      development: 100,
+    };
+  }
+
   const finalType = calculateFinalType();
 
   progressFill.style.width = "100%";
   resultCityType.textContent = finalType.title;
-  resultFeedback.textContent = finalType.description;
+  resultFeedback.textContent = isPerfectRouteActive && hasPerfectRouteForDifficulty(currentDifficulty)
+    ? `${finalType.description} 만점 루트를 달성했습니다.`
+    : finalType.description;
   resultScore.textContent = `총점: ${calculateTotalScore()}점`;
   resultStats.innerHTML = Object.entries(stats)
     .map(
@@ -752,6 +780,19 @@ function showResultScreen() {
   updateCityVisual("result");
   saveStatus.textContent = "";
   showScreen("result");
+}
+
+function hasPerfectRouteForDifficulty(difficulty) {
+  const route = PERFECT_ROUTE_CHOICES[difficulty];
+  return Array.isArray(route) && route.length === activeQuestions.length;
+}
+
+function isPerfectChoiceForCurrentRound(choiceIndex) {
+  const route = PERFECT_ROUTE_CHOICES[currentDifficulty];
+  if (!Array.isArray(route)) {
+    return false;
+  }
+  return route[currentRound] === choiceIndex;
 }
 
 async function saveResult() {

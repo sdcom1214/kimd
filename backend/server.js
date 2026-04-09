@@ -6,6 +6,7 @@ const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 3100;
 const IS_VERCEL = Boolean(process.env.VERCEL);
+const RESET_PASSWORD = process.env.RESET_PASSWORD || "cityreset2026";
 const DATA_DIR = IS_VERCEL ? path.join("/tmp", "city-evolution-simulator-data") : path.join(__dirname, "data");
 const DATA_FILE = path.join(DATA_DIR, "leaderboard.json");
 
@@ -87,6 +88,32 @@ app.post("/api/result", (req, res) => {
   } catch (error) {
     console.error("Failed to save result:", error);
     res.status(500).json({ error: "Could not save result." });
+  }
+});
+
+app.post("/api/reset", (req, res) => {
+  try {
+    const password = typeof req.body?.password === "string" ? req.body.password : "";
+    if (!password) {
+      return res.status(400).json({ ok: false, error: "password is required." });
+    }
+
+    if (password !== RESET_PASSWORD) {
+      return res.status(401).json({ ok: false, error: "invalid password." });
+    }
+
+    const records = loadRecords();
+    const deletedCount = records.length;
+    saveRecords([]);
+
+    res.json({
+      ok: true,
+      message: "Leaderboard reset completed.",
+      deletedCount,
+    });
+  } catch (error) {
+    console.error("Failed to reset leaderboard:", error);
+    res.status(500).json({ ok: false, error: "Could not reset leaderboard." });
   }
 });
 
