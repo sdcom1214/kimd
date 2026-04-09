@@ -341,8 +341,8 @@ const DIFFICULTY_LEVELS = {
 };
 
 const PERFECT_ROUTE_CHOICES = {
-  easy: [2, 0, 0, 0, 0, 1],
-  normal: [0, 0, 0, 1, 1, 1],
+  easy: [0, 0, 0, 0, 0, 0],
+  normal: [0, 0, 0, 0, 0, 0],
   hard: [0, 0, 0, 0, 0, 0],
 };
 
