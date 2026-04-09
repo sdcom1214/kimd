@@ -315,6 +315,15 @@ const QUESTION_SETS = {
   ],
 };
 
+const HARD_CHOICE_COSTS = [
+  [18, 10, 0],
+  [16, 9, 0],
+  [15, 8, 0],
+  [17, 9, 0],
+  [14, 8, 0],
+  [16, 10, 0],
+];
+
 const DIFFICULTY_LEVELS = {
   easy: {
     label: "쉬움",
@@ -386,6 +395,10 @@ const statElements = {
     value: document.getElementById("development-value"),
     bar: document.getElementById("development-bar"),
   },
+  finance: {
+    value: document.getElementById("finance-value"),
+    bar: document.getElementById("finance-bar"),
+  },
 };
 
 const roundLabel = document.getElementById("round-label");
@@ -405,6 +418,7 @@ const resultScore = document.getElementById("result-score");
 const nicknameInput = document.getElementById("nickname-input");
 const saveStatus = document.getElementById("save-status");
 const leaderboardContent = document.getElementById("leaderboard-content");
+const financeStatBlock = document.getElementById("finance-value")?.closest(".stat-block");
 
 let currentRound = 0;
 let hasSavedCurrentRun = false;
@@ -446,6 +460,7 @@ function createInitialStats() {
     transport: 50,
     happiness: 50,
     development: 50,
+    finance: 60,
   };
 }
 
@@ -492,10 +507,13 @@ function renderQuestion() {
   const question = activeQuestions[currentRound];
   const totalRounds = activeQuestions.length;
   const difficulty = DIFFICULTY_LEVELS[currentDifficulty];
-  const roundChoices = question.choices.map((choice) => {
+  const isHardMode = currentDifficulty === "hard";
+  const roundChoices = question.choices.map((choice, choiceIndex) => {
     const effects = applyDifficultyToEffects(choice.effects, difficulty);
     const summary = getChoiceSummary(effects, difficulty.previewMode);
-    return { ...choice, effects, summary };
+    const cost = isHardMode ? HARD_CHOICE_COSTS[currentRound]?.[choiceIndex] ?? 0 : 0;
+    const affordable = !isHardMode || stats.finance >= cost;
+    return { ...choice, effects, summary, cost, affordable };
   });
 
   roundLabel.textContent = `${currentRound + 1} / ${totalRounds} 라운드 · ${difficulty.label}`;
@@ -503,16 +521,28 @@ function renderQuestion() {
   currentDifficultyBadge.textContent = difficulty.label;
   questionTitle.classList.toggle("compact-title", currentDifficulty === "hard");
   questionTitle.textContent = question.prompt;
-  choiceHelper.textContent = getDifficultyGuideText(currentDifficulty);
+  choiceHelper.textContent = isHardMode
+    ? `${getDifficultyGuideText(currentDifficulty)} 현재 재정: ${stats.finance}`
+    : getDifficultyGuideText(currentDifficulty);
   choicesContainer.innerHTML = "";
   let hasPickedChoice = false;
 
   roundChoices.forEach((choice) => {
     const button = document.createElement("button");
     button.className = "choice-button";
-    button.innerHTML = `<strong>${choice.text}</strong><span>${choice.summary}</span>`;
+    if (isHardMode) {
+      button.innerHTML = `<strong>${choice.text}</strong><span>${choice.summary} · 필요 재정 ${choice.cost}</span>`;
+    } else {
+      button.innerHTML = `<strong>${choice.text}</strong><span>${choice.summary}</span>`;
+    }
+
+    if (!choice.affordable) {
+      button.disabled = true;
+      button.classList.add("is-unavailable");
+    }
+
     button.addEventListener("click", () => {
-      if (hasPickedChoice) {
+      if (hasPickedChoice || !choice.affordable) {
         return;
       }
 
@@ -532,17 +562,21 @@ function renderQuestion() {
       });
 
       window.setTimeout(() => {
-        applyChoiceEffects(choice.effects);
+        applyChoiceEffects(choice.effects, choice.cost);
       }, 260);
     });
     choicesContainer.appendChild(button);
   });
 }
 
-function applyChoiceEffects(effects) {
+function applyChoiceEffects(effects, cost = 0) {
   Object.entries(effects).forEach(([statName, delta]) => {
     stats[statName] = clamp(stats[statName] + delta);
   });
+
+  if (currentDifficulty === "hard") {
+    stats.finance = clamp(stats.finance - cost);
+  }
 
   updateStatsUI();
   updateCityVisual("game");
@@ -558,7 +592,14 @@ function applyChoiceEffects(effects) {
 }
 
 function updateStatsUI() {
+  if (financeStatBlock) {
+    financeStatBlock.style.display = currentDifficulty === "hard" ? "" : "none";
+  }
+
   Object.entries(statElements).forEach(([name, refs]) => {
+    if (name === "finance" && currentDifficulty !== "hard") {
+      return;
+    }
     refs.value.textContent = stats[name];
     refs.bar.style.width = `${stats[name]}%`;
   });
@@ -741,7 +782,14 @@ function showResultScreen() {
   resultCityType.textContent = finalType.title;
   resultFeedback.textContent = finalType.description;
   resultScore.textContent = `총점: ${calculateTotalScore()}점`;
-  resultStats.innerHTML = Object.entries(stats)
+  const resultStatsEntries = Object.entries(stats).filter(([name]) => {
+    if (name === "finance" && currentDifficulty !== "hard") {
+      return false;
+    }
+    return true;
+  });
+
+  resultStats.innerHTML = resultStatsEntries
     .map(
       ([name, value]) =>
         `<div class="result-stat">${getStatLabel(name)}: <strong>${value}</strong></div>`,
@@ -769,6 +817,7 @@ async function saveResult() {
   const payload = {
     playerName,
     stats,
+    difficulty: currentDifficulty,
     cityType: calculateFinalType().title,
     totalScore: calculateTotalScore(),
   };
@@ -822,7 +871,10 @@ async function fetchLeaderboard() {
 }
 
 function renderLeaderboard(entries) {
-  if (!Array.isArray(entries) || entries.length === 0) {
+  const grouped = normalizeLeaderboardPayload(entries);
+  const totalCount = grouped.easy.length + grouped.normal.length + grouped.hard.length;
+
+  if (totalCount === 0) {
     leaderboardContent.innerHTML = `
       <div class="leaderboard-empty">
         아직 저장된 기록이 없습니다.<br />
@@ -832,7 +884,48 @@ function renderLeaderboard(entries) {
     return;
   }
 
-  leaderboardContent.innerHTML = entries
+  leaderboardContent.innerHTML = ["easy", "normal", "hard"]
+    .map((difficultyKey) => renderLeaderboardSection(difficultyKey, grouped[difficultyKey]))
+    .join("");
+}
+
+function normalizeLeaderboardPayload(payload) {
+  if (Array.isArray(payload)) {
+    return {
+      easy: payload.filter((entry) => entry.difficulty === "easy"),
+      normal: payload.filter((entry) => entry.difficulty === "normal"),
+      hard: payload.filter((entry) => entry.difficulty === "hard"),
+    };
+  }
+
+  if (payload && typeof payload === "object") {
+    return {
+      easy: Array.isArray(payload.easy) ? payload.easy : [],
+      normal: Array.isArray(payload.normal) ? payload.normal : [],
+      hard: Array.isArray(payload.hard) ? payload.hard : [],
+    };
+  }
+
+  return { easy: [], normal: [], hard: [] };
+}
+
+function renderLeaderboardSection(difficultyKey, entries) {
+  const titleMap = {
+    easy: "쉬움",
+    normal: "보통",
+    hard: "어려움",
+  };
+
+  if (!entries.length) {
+    return `
+      <section class="leaderboard-group">
+        <h3 class="leaderboard-group-title">${titleMap[difficultyKey]}</h3>
+        <div class="leaderboard-empty">아직 저장된 기록이 없습니다.</div>
+      </section>
+    `;
+  }
+
+  const rows = entries
     .map(
       (entry, index) => `
         <article class="leaderboard-row">
@@ -845,6 +938,13 @@ function renderLeaderboard(entries) {
       `,
     )
     .join("");
+
+  return `
+    <section class="leaderboard-group">
+      <h3 class="leaderboard-group-title">${titleMap[difficultyKey]}</h3>
+      ${rows}
+    </section>
+  `;
 }
 
 function formatEffects(effects) {
@@ -888,7 +988,10 @@ function applyDifficultyToEffects(baseEffects, difficulty) {
   });
 
   if (difficulty.sideEffectChance > 0 && Math.random() < difficulty.sideEffectChance) {
-    const statNames = Object.keys(statElements);
+    const statNames =
+      currentDifficulty === "hard"
+        ? ["environment", "transport", "happiness", "development", "finance"]
+        : ["environment", "transport", "happiness", "development"];
     const targetStat = statNames[getRandomInt(0, statNames.length - 1)];
     const [minPenalty, maxPenalty] = difficulty.sideEffectRange;
     const penalty = -getRandomInt(minPenalty, maxPenalty);
@@ -940,6 +1043,7 @@ function getStatLabel(name) {
     transport: "교통",
     happiness: "행복",
     development: "발전",
+    finance: "재정",
   };
 
   return labels[name] || name;
@@ -1046,7 +1150,7 @@ function getDifficultyGuideText(level) {
   }
 
   if (level === "hard") {
-    return "효과 정보가 거의 숨겨집니다. 리스크를 감수하고 전략적으로 선택하세요.";
+    return "효과 정보가 거의 숨겨집니다. 재정에 따라 일부 선택이 잠길 수 있습니다.";
   }
 
   return "선택하면 즉시 도시 상태가 반영됩니다.";

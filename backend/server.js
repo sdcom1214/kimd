@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 3100;
 const DATA_DIR = path.join(__dirname, "data");
 const DB_FILE = path.join(DATA_DIR, "leaderboard.db");
 const LEGACY_DATA_FILE = path.join(DATA_DIR, "leaderboard.json");
+const DIFFICULTIES = ["easy", "normal", "hard"];
 
 ensureDataDir();
 const db = new Database(DB_FILE);
@@ -23,18 +24,20 @@ const saveResultTransaction = db.transaction((payload) => {
   const recordId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const timestamp = new Date().toISOString();
 
-  statements.insertGameResult.run(recordId, player.id, cityType.id, payload.totalScore, timestamp);
+  statements.insertGameResult.run(recordId, player.id, cityType.id, payload.difficulty, payload.totalScore, timestamp);
   statements.insertResultStats.run(
     recordId,
     payload.stats.environment,
     payload.stats.transport,
     payload.stats.happiness,
     payload.stats.development,
+    payload.stats.finance,
   );
 
   return {
     id: recordId,
     playerName: player.name,
+    difficulty: payload.difficulty,
     cityType: cityType.name,
     totalScore: payload.totalScore,
     stats: payload.stats,
@@ -66,19 +69,30 @@ app.get("/api/leaderboard", (req, res) => {
     }
 
     const rows = statements.selectLeaderboard.all(limit);
-    const result = rows.map((row) => ({
-      id: row.id,
-      playerName: row.playerName,
-      cityType: row.cityType,
-      totalScore: row.totalScore,
-      stats: {
-        environment: row.environment,
-        transport: row.transport,
-        happiness: row.happiness,
-        development: row.development,
-      },
-      timestamp: row.timestamp,
-    }));
+    const result = {
+      easy: [],
+      normal: [],
+      hard: [],
+    };
+
+    rows.forEach((row) => {
+      const difficulty = normalizeDifficulty(row.difficulty);
+      result[difficulty].push({
+        id: row.id,
+        playerName: row.playerName,
+        difficulty,
+        cityType: row.cityType,
+        totalScore: row.totalScore,
+        stats: {
+          environment: row.environment,
+          transport: row.transport,
+          happiness: row.happiness,
+          development: row.development,
+          finance: row.finance,
+        },
+        timestamp: row.timestamp,
+      });
+    });
 
     leaderboardCache.set(limit, result);
     res.json(result);
@@ -99,6 +113,7 @@ app.post("/api/result", (req, res) => {
     const sanitizedPayload = {
       playerName: req.body.playerName.trim(),
       cityType: req.body.cityType.trim(),
+      difficulty: normalizeDifficulty(req.body.difficulty),
       totalScore: clampNumber(req.body.totalScore, 0, 400),
       stats: sanitizeStats(req.body.stats),
     };
@@ -159,6 +174,7 @@ function prepareSchema(database) {
       id TEXT PRIMARY KEY,
       player_id INTEGER NOT NULL,
       city_type_id INTEGER NOT NULL,
+      difficulty TEXT NOT NULL DEFAULT 'normal',
       total_score INTEGER NOT NULL CHECK(total_score BETWEEN 0 AND 400),
       created_at TEXT NOT NULL,
       FOREIGN KEY (player_id) REFERENCES players(id),
@@ -171,6 +187,7 @@ function prepareSchema(database) {
       transport INTEGER NOT NULL CHECK(transport BETWEEN 0 AND 100),
       happiness INTEGER NOT NULL CHECK(happiness BETWEEN 0 AND 100),
       development INTEGER NOT NULL CHECK(development BETWEEN 0 AND 100),
+      finance INTEGER NOT NULL DEFAULT 50 CHECK(finance BETWEEN 0 AND 100),
       FOREIGN KEY (result_id) REFERENCES game_results(id) ON DELETE CASCADE
     );
 
@@ -179,6 +196,14 @@ function prepareSchema(database) {
 
     CREATE INDEX IF NOT EXISTS idx_game_results_player_id
       ON game_results(player_id);
+  `);
+
+  ensureColumn(database, "game_results", "difficulty", "TEXT NOT NULL DEFAULT 'normal'");
+  ensureColumn(database, "result_stats", "finance", "INTEGER NOT NULL DEFAULT 50 CHECK(finance BETWEEN 0 AND 100)");
+
+  database.exec(`
+    CREATE INDEX IF NOT EXISTS idx_game_results_difficulty
+      ON game_results(difficulty);
   `);
 }
 
@@ -190,30 +215,58 @@ function prepareStatements(database) {
     getCityTypeByName: database.prepare("SELECT id, name FROM city_types WHERE name = ?"),
     insertCityType: database.prepare("INSERT INTO city_types (name) VALUES (?)"),
     insertGameResult: database.prepare(`
-      INSERT INTO game_results (id, player_id, city_type_id, total_score, created_at)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO game_results (id, player_id, city_type_id, difficulty, total_score, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
     `),
     insertResultStats: database.prepare(`
-      INSERT INTO result_stats (result_id, environment, transport, happiness, development)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO result_stats (result_id, environment, transport, happiness, development, finance)
+      VALUES (?, ?, ?, ?, ?, ?)
     `),
     selectLeaderboard: database.prepare(`
       SELECT
-        gr.id AS id,
-        p.name AS playerName,
-        ct.name AS cityType,
-        gr.total_score AS totalScore,
-        gr.created_at AS timestamp,
-        rs.environment AS environment,
-        rs.transport AS transport,
-        rs.happiness AS happiness,
-        rs.development AS development
-      FROM game_results gr
-      INNER JOIN players p ON p.id = gr.player_id
-      INNER JOIN city_types ct ON ct.id = gr.city_type_id
-      INNER JOIN result_stats rs ON rs.result_id = gr.id
-      ORDER BY gr.total_score DESC, gr.created_at DESC
-      LIMIT ?
+        id,
+        playerName,
+        cityType,
+        difficulty,
+        totalScore,
+        timestamp,
+        environment,
+        transport,
+        happiness,
+        development,
+        finance
+      FROM (
+        SELECT
+          gr.id AS id,
+          p.name AS playerName,
+          ct.name AS cityType,
+          gr.difficulty AS difficulty,
+          gr.total_score AS totalScore,
+          gr.created_at AS timestamp,
+          rs.environment AS environment,
+          rs.transport AS transport,
+          rs.happiness AS happiness,
+          rs.development AS development,
+          rs.finance AS finance,
+          ROW_NUMBER() OVER (
+            PARTITION BY gr.difficulty
+            ORDER BY gr.total_score DESC, gr.created_at DESC
+          ) AS difficultyRank
+        FROM game_results gr
+        INNER JOIN players p ON p.id = gr.player_id
+        INNER JOIN city_types ct ON ct.id = gr.city_type_id
+        INNER JOIN result_stats rs ON rs.result_id = gr.id
+      )
+      WHERE difficultyRank <= ?
+      ORDER BY
+        CASE difficulty
+          WHEN 'easy' THEN 1
+          WHEN 'normal' THEN 2
+          WHEN 'hard' THEN 3
+          ELSE 4
+        END,
+        totalScore DESC,
+        timestamp DESC
     `),
   };
 }
@@ -248,6 +301,7 @@ function migrateLegacyJsonIfNeeded(database) {
 
       const playerName = entry.playerName.trim();
       const cityTypeName = entry.cityType.trim();
+      const difficulty = normalizeDifficulty(entry.difficulty);
       const totalScore = clampNumber(entry.totalScore, 0, 400);
       const stats = sanitizeStats(entry.stats);
       const player = getOrCreatePlayer(stmts, playerName);
@@ -255,13 +309,14 @@ function migrateLegacyJsonIfNeeded(database) {
       const resultId = typeof entry.id === "string" && entry.id.trim() ? entry.id.trim() : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const timestamp = normalizeTimestamp(entry.timestamp);
 
-      stmts.insertGameResult.run(resultId, player.id, cityType.id, totalScore, timestamp);
+      stmts.insertGameResult.run(resultId, player.id, cityType.id, difficulty, totalScore, timestamp);
       stmts.insertResultStats.run(
         resultId,
         stats.environment,
         stats.transport,
         stats.happiness,
         stats.development,
+        stats.finance,
       );
     });
 
@@ -332,6 +387,10 @@ function validateResult(body) {
     return { valid: false, message: "cityType is required." };
   }
 
+  if (body.difficulty !== undefined && !isValidDifficulty(body.difficulty)) {
+    return { valid: false, message: "difficulty must be easy, normal, or hard." };
+  }
+
   if (!body.stats || typeof body.stats !== "object") {
     return { valid: false, message: "stats are required." };
   }
@@ -341,6 +400,10 @@ function validateResult(body) {
 
   if (!statsAreValid) {
     return { valid: false, message: "All stats must be numeric." };
+  }
+
+  if (body.stats.finance !== undefined && !Number.isFinite(Number(body.stats.finance))) {
+    return { valid: false, message: "finance must be numeric." };
   }
 
   if (!Number.isFinite(Number(body.totalScore))) {
@@ -356,7 +419,30 @@ function sanitizeStats(inputStats) {
     transport: clampNumber(inputStats.transport, 0, 100),
     happiness: clampNumber(inputStats.happiness, 0, 100),
     development: clampNumber(inputStats.development, 0, 100),
+    finance: clampNumber(inputStats.finance ?? 50, 0, 100),
   };
+}
+
+function normalizeDifficulty(value) {
+  const normalized = String(value || "normal").trim().toLowerCase();
+  if (DIFFICULTIES.includes(normalized)) {
+    return normalized;
+  }
+  return "normal";
+}
+
+function isValidDifficulty(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return DIFFICULTIES.includes(normalized);
+}
+
+function ensureColumn(database, tableName, columnName, columnDefinition) {
+  const columns = database.prepare(`PRAGMA table_info(${tableName})`).all();
+  const exists = columns.some((column) => column.name === columnName);
+  if (exists) {
+    return;
+  }
+  database.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDefinition}`);
 }
 
 function clampNumber(value, min, max) {
