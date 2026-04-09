@@ -1,4 +1,5 @@
 const API_BASE_URL = resolveApiBaseUrl();
+const API_BASE_CANDIDATES = buildApiBaseCandidates(API_BASE_URL);
 
 const QUESTION_SETS = {
   easy: [
@@ -776,7 +777,7 @@ async function saveResult() {
   saveStatus.textContent = "결과를 저장하는 중입니다...";
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/result`, {
+    const response = await requestApi("/api/result", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -794,7 +795,7 @@ async function saveResult() {
     showScreen("leaderboard");
   } catch (error) {
     console.error(error);
-    saveStatus.textContent = `결과를 저장하지 못했습니다. API 서버 주소(${API_BASE_URL || "미설정"})를 확인하세요.`;
+    saveStatus.textContent = `결과를 저장하지 못했습니다. API 경로(${formatApiBaseCandidates(API_BASE_CANDIDATES)})를 확인하세요.`;
   }
 }
 
@@ -802,7 +803,7 @@ async function fetchLeaderboard() {
   leaderboardContent.innerHTML = `<div class="leaderboard-empty">리더보드를 불러오는 중입니다...</div>`;
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/leaderboard`);
+    const response = await requestApi("/api/leaderboard");
 
     if (!response.ok) {
       throw new Error("Leaderboard request failed");
@@ -815,7 +816,7 @@ async function fetchLeaderboard() {
     leaderboardContent.innerHTML = `
       <div class="leaderboard-empty">
         리더보드를 불러오지 못했습니다.<br />
-        ${API_BASE_URL} 에서 백엔드 서버를 실행하세요.
+        API 경로(${formatApiBaseCandidates(API_BASE_CANDIDATES)})를 확인하세요.
       </div>
     `;
   }
@@ -1017,6 +1018,64 @@ function resolveApiBaseUrl() {
   }
 
   return "/_/backend";
+}
+
+function buildApiBaseCandidates(baseUrl) {
+  const normalized = String(baseUrl || "").trim().replace(/\/+$/, "");
+
+  if (!normalized) {
+    return ["", "/_/backend"];
+  }
+
+  if (normalized === "/_/backend") {
+    return ["/_/backend", ""];
+  }
+
+  if (normalized.startsWith("http://") || normalized.startsWith("https://")) {
+    return [normalized];
+  }
+
+  return [normalized, "", "/_/backend"];
+}
+
+async function requestApi(pathname, options) {
+  let lastError = null;
+  let lastResponse = null;
+
+  for (const base of API_BASE_CANDIDATES) {
+    const url = `${base}${pathname}`;
+
+    try {
+      const response = await fetch(url, options);
+
+      if (response.ok) {
+        return response;
+      }
+
+      if (response.status === 404) {
+        lastResponse = response;
+        continue;
+      }
+
+      return response;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (lastError) {
+    throw lastError;
+  }
+
+  if (lastResponse) {
+    return lastResponse;
+  }
+
+  throw new Error("API request failed");
+}
+
+function formatApiBaseCandidates(candidates) {
+  return candidates.map((base) => (base ? base : "/")).join(", ");
 }
 
 function sanitizeApiBaseUrl(rawValue) {
