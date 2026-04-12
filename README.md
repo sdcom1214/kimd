@@ -1,9 +1,9 @@
-# 도시 진화 시뮬레이터
+# City Evolution Simulator
 
-로컬 실행 기준으로 구성된 도시 정책 선택형 시뮬레이션 프로젝트입니다.
+도시 정책 선택을 통해 도시 지표를 변화시키는 Vite + Express 프로젝트입니다.
 
-- 프론트엔드: `frontend/` (Vite)
-- 백엔드: `backend/` (Express + SQLite)
-- 기본 백엔드 주소: `http://localhost:3100`
+- 프런트엔드: `frontend/`
+- 백엔드: `backend/`
+- 배포 경로 계약: 프런트 `/`, 백엔드 `/_/backend`
 
-자세한 실행 방법은 `docs/SERVER_SETUP.md`를 참고하세요.
+상세 실행 및 배포 방법은 `docs/SERVER_SETUP.md`를 참고하세요.

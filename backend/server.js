@@ -1,58 +1,44 @@
 const express = require("express");
 const cors = require("cors");
-const fs = require("fs");
-const path = require("path");
+
+const { createStorage } = require("./storage");
 
 const app = express();
 const PORT = process.env.PORT || 3100;
-const IS_VERCEL = Boolean(process.env.VERCEL);
-const RESET_PASSWORD = process.env.RESET_PASSWORD || "cityreset2026";
-const DATA_DIR = IS_VERCEL ? path.join("/tmp", "city-evolution-simulator-data") : path.join(__dirname, "data");
-const DATA_FILE = path.join(DATA_DIR, "leaderboard.json");
-
-ensureDataDir();
+const RESET_PASSWORD = typeof process.env.RESET_PASSWORD === "string" ? process.env.RESET_PASSWORD.trim() : "";
+const FIRESTORE_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+const FIRESTORE_RATE_LIMIT_MAX_REQUESTS = 20;
+const storage = createStorage();
 
 app.disable("x-powered-by");
+app.set("trust proxy", true);
 app.use(cors());
 app.use(express.json({ limit: "64kb" }));
 
-app.get("/api/health", (req, res) => {
-  res.json({
-    ok: true,
-    message: "City Evolution Simulator backend is running.",
-    timestamp: new Date().toISOString(),
-    storage: "json",
-  });
+app.get("/api/health", async (req, res) => {
+  try {
+    const health = await storage.getHealth();
+    res.json({
+      ok: true,
+      message: "City Evolution Simulator backend is running.",
+      timestamp: new Date().toISOString(),
+      storage: health.storage,
+      resetEnabled: Boolean(RESET_PASSWORD),
+    });
+  } catch (error) {
+    console.error("Health check failed:", error);
+    res.status(500).json({
+      ok: false,
+      error: "Storage is unavailable.",
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
-app.get("/api/leaderboard", (req, res) => {
+app.get("/api/leaderboard", applyFirestoreRateLimit, async (req, res) => {
   try {
     const limit = parseLimit(req.query.limit);
-    const records = loadRecords();
-    const grouped = {
-      easy: [],
-      normal: [],
-      hard: [],
-    };
-
-    const sorted = records
-      .sort((a, b) => {
-        if (b.totalScore !== a.totalScore) {
-          return b.totalScore - a.totalScore;
-        }
-        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-      });
-
-    for (const entry of sorted) {
-      const difficulty = normalizeDifficulty(entry.difficulty);
-      if (grouped[difficulty].length < limit) {
-        grouped[difficulty].push({
-          ...entry,
-          difficulty,
-        });
-      }
-    }
-
+    const grouped = await storage.getLeaderboard(limit);
     res.json(grouped);
   } catch (error) {
     console.error("Failed to read leaderboard:", error);
@@ -60,7 +46,7 @@ app.get("/api/leaderboard", (req, res) => {
   }
 });
 
-app.post("/api/result", (req, res) => {
+app.post("/api/result", applyFirestoreRateLimit, async (req, res) => {
   try {
     const validation = validateResult(req.body);
     if (!validation.valid) {
@@ -68,22 +54,17 @@ app.post("/api/result", (req, res) => {
     }
 
     const sanitizedPayload = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       playerName: req.body.playerName.trim(),
       cityType: req.body.cityType.trim(),
       difficulty: normalizeDifficulty(req.body.difficulty),
-      totalScore: clampNumber(req.body.totalScore, 0, 400),
+      totalScore: clampNumber(req.body.totalScore, 0, 40000),
       stats: sanitizeStats(req.body.stats),
-      timestamp: new Date().toISOString(),
     };
 
-    const records = loadRecords();
-    records.push(sanitizedPayload);
-    saveRecords(records);
-
+    const record = await storage.saveResult(sanitizedPayload);
     res.status(201).json({
       message: "Result saved successfully.",
-      record: sanitizedPayload,
+      record,
     });
   } catch (error) {
     console.error("Failed to save result:", error);
@@ -91,7 +72,14 @@ app.post("/api/result", (req, res) => {
   }
 });
 
-app.post("/api/reset", (req, res) => {
+app.post("/api/reset", applyFirestoreRateLimit, async (req, res) => {
+  if (!RESET_PASSWORD) {
+    return res.status(503).json({
+      ok: false,
+      error: "Reset endpoint is disabled.",
+    });
+  }
+
   try {
     const password = typeof req.body?.password === "string" ? req.body.password : "";
     if (!password) {
@@ -102,10 +90,7 @@ app.post("/api/reset", (req, res) => {
       return res.status(401).json({ ok: false, error: "invalid password." });
     }
 
-    const records = loadRecords();
-    const deletedCount = records.length;
-    saveRecords([]);
-
+    const deletedCount = await storage.resetLeaderboard();
     res.json({
       ok: true,
       message: "Leaderboard reset completed.",
@@ -118,39 +103,21 @@ app.post("/api/reset", (req, res) => {
 });
 
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`City Evolution Simulator backend running on http://localhost:${PORT}`);
-  });
+  startServer();
 }
 
 module.exports = app;
 
-function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+async function startServer() {
+  try {
+    await storage.ready;
+    app.listen(PORT, () => {
+      console.log(`City Evolution Simulator backend running on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error("Failed to start backend:", error);
+    process.exit(1);
   }
-}
-
-function loadRecords() {
-  if (!fs.existsSync(DATA_FILE)) {
-    return [];
-  }
-
-  const raw = fs.readFileSync(DATA_FILE, "utf8");
-  if (!raw.trim()) {
-    return [];
-  }
-
-  const parsed = JSON.parse(raw);
-  if (!Array.isArray(parsed)) {
-    return [];
-  }
-
-  return parsed.filter((entry) => validateResult(entry).valid);
-}
-
-function saveRecords(records) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(records, null, 2));
 }
 
 function parseLimit(value) {
@@ -159,6 +126,48 @@ function parseLimit(value) {
     return 100;
   }
   return Math.max(1, Math.min(parsed, 500));
+}
+
+async function applyFirestoreRateLimit(req, res, next) {
+  try {
+    const result = await storage.checkRateLimit({
+      key: "firestore-api",
+      ip: req.ip || req.socket?.remoteAddress || "unknown",
+      limit: FIRESTORE_RATE_LIMIT_MAX_REQUESTS,
+      windowMs: FIRESTORE_RATE_LIMIT_WINDOW_MS,
+    });
+
+    setRateLimitHeaders(res, result);
+
+    if (!result.allowed) {
+      res.status(429).json({
+        ok: false,
+        error: "Too many Firestore requests from this IP. Try again later.",
+        retryAfterSeconds: Math.max(1, Math.ceil((result.resetAt - Date.now()) / 1000)),
+      });
+      return;
+    }
+
+    next();
+  } catch (error) {
+    console.error("Rate limit check failed:", error);
+    res.status(503).json({
+      ok: false,
+      error: "Rate limit service is temporarily unavailable.",
+    });
+  }
+}
+
+function setRateLimitHeaders(res, result) {
+  const remaining = Math.max(0, Number(result.remaining) || 0);
+  res.setHeader("X-RateLimit-Limit", String(FIRESTORE_RATE_LIMIT_MAX_REQUESTS));
+  res.setHeader("X-RateLimit-Remaining", String(remaining));
+  res.setHeader("X-RateLimit-Reset", String(Math.ceil((Number(result.resetAt) || Date.now()) / 1000)));
+
+  if (remaining === 0) {
+    const resetAt = Number(result.resetAt) || Date.now();
+    res.setHeader("Retry-After", String(Math.max(1, Math.ceil((resetAt - Date.now()) / 1000))));
+  }
 }
 
 function validateResult(body) {
@@ -182,8 +191,10 @@ function validateResult(body) {
     return { valid: false, message: "stats are required." };
   }
 
-  const requiredStats = ["environment", "transport", "happiness", "development"];
-  const statsAreValid = requiredStats.every((key) => Number.isFinite(Number(body.stats[key])));
+  const requiredStats = ["environment", "happiness", "development"];
+  const statsAreValid =
+    requiredStats.every((key) => Number.isFinite(Number(body.stats[key])))
+    && Number.isFinite(Number(body.stats.finance ?? body.stats.transport));
 
   if (!statsAreValid) {
     return { valid: false, message: "All stats must be numeric." };
@@ -203,7 +214,7 @@ function validateResult(body) {
 function sanitizeStats(inputStats) {
   return {
     environment: clampNumber(inputStats.environment, 0, 100),
-    transport: clampNumber(inputStats.transport, 0, 100),
+    finance: clampNumber(inputStats.finance ?? inputStats.transport, 0, 100),
     happiness: clampNumber(inputStats.happiness, 0, 100),
     development: clampNumber(inputStats.development, 0, 100),
   };

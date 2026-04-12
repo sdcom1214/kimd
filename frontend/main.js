@@ -4,312 +4,312 @@ const API_BASE_CANDIDATES = buildApiBaseCandidates(API_BASE_URL);
 const QUESTION_SETS = {
   easy: [
     {
-      prompt: "등교 시간 학교 앞이 자주 막힙니다",
+      prompt: "교통이 불편합니다",
       choices: [
         {
-          text: "학교 앞 300m 구간에 보행 우선 신호를 도입한다",
-          effects: { transport: 7, happiness: 7, environment: 2 },
+          text: "도로를 일부 재정비한다",
+          effects: { finance: -15, development: 5, environment: -2, happiness: 3 },
         },
         {
-          text: "학부모 차량 임시 정차 구역을 새로 만든다",
-          effects: { transport: 5, development: 4, environment: -2 },
+          text: "도로를 완전 재정비한다",
+          effects: { finance: -30, development: 10, environment: -5, happiness: 7 },
         },
         {
-          text: "통학버스 노선을 늘리고 탑승 안내를 강화한다",
-          effects: { transport: 8, happiness: 5, environment: 4 },
+          text: "내버려둔다",
+          effects: { finance: 10, development: -4, happiness: -5 },
         },
       ],
     },
     {
-      prompt: "동네 공원이 낡아 시민 이용이 줄었습니다",
+      prompt: "도시가 너무 칙칙합니다",
       choices: [
         {
-          text: "그늘 쉼터와 벤치를 늘린다",
-          effects: { happiness: 8, environment: 5, development: -1 },
+          text: "자연 환경을 조성한다",
+          effects: { finance: -20, happiness: 10, environment: 15 },
         },
         {
-          text: "야간 조명과 산책로를 정비한다",
-          effects: { happiness: 7, transport: 3, development: 2 },
+          text: "거리 미관과 휴식 공간을 함께 정비한다",
+          effects: { finance: -12, happiness: 6, environment: 8, development: 1 },
         },
         {
-          text: "공원 일부를 주차장으로 전환한다",
-          effects: { transport: 5, development: 5, environment: -7, happiness: -2 },
+          text: "내버려둔다",
+          effects: { finance: 15, development: -2, happiness: -10, environment: -5 },
         },
       ],
     },
     {
-      prompt: "버스 정류장 환경이 불편하다는 민원이 많습니다",
+      prompt: "도시 개발이 필요합니다",
       choices: [
         {
-          text: "정류장에 실시간 도착 안내판을 설치한다",
-          effects: { transport: 8, happiness: 4, development: 2 },
+          text: "전면적 개발을 진행한다",
+          effects: { finance: -40, development: 15, environment: -15, happiness: 10 },
         },
         {
-          text: "정류장 지붕과 의자를 전면 교체한다",
-          effects: { happiness: 8, transport: 4, development: 1 },
+          text: "부분적 개발을 진행한다",
+          effects: { finance: -20, development: 8, environment: -10, happiness: 5 },
         },
         {
-          text: "예산 절감을 위해 최소 보수만 진행한다",
-          effects: { development: 3, transport: 1, happiness: -4 },
+          text: "내버려둔다",
+          effects: { finance: 20, development: -6, happiness: -5, environment: 5 },
         },
       ],
     },
     {
-      prompt: "도심 미세먼지 수치가 최근 상승했습니다",
+      prompt: "학교가 부족합니다",
       choices: [
         {
-          text: "대기오염 취약 구역에 가로수를 추가 식재한다",
-          effects: { environment: 9, happiness: 4, development: -1 },
+          text: "학교를 건설한다",
+          effects: { finance: -25, development: 8, happiness: 10 },
         },
         {
-          text: "친환경 청소차와 물청소 주기를 늘린다",
-          effects: { environment: 8, transport: 3, happiness: 2 },
+          text: "기존 시설을 증축한다",
+          effects: { finance: -15, development: 4, happiness: 6 },
         },
         {
-          text: "산업 물류 차량 통행을 허용해 물량을 맞춘다",
-          effects: { development: 7, environment: -7, happiness: -2 },
+          text: "내버려둔다",
+          effects: { finance: 10, development: -4, happiness: -10 },
         },
       ],
     },
     {
-      prompt: "주말마다 시민들이 여가공간 부족을 호소합니다",
+      prompt: "병원이 부족합니다",
       choices: [
         {
-          text: "하천변에 소규모 휴식공간을 만든다",
-          effects: { happiness: 9, environment: 6, development: -1 },
+          text: "종합병원을 새로 건설한다",
+          effects: { finance: -30, development: 6, happiness: 15 },
         },
         {
-          text: "주민센터 유휴공간을 문화공간으로 바꾼다",
-          effects: { happiness: 8, development: 3, transport: 2 },
+          text: "소형 병원을 늘린다",
+          effects: { finance: -15, development: 3, happiness: 7 },
         },
         {
-          text: "상업시설 확장으로 소비 편의를 우선한다",
-          effects: { development: 8, happiness: 1, environment: -4 },
+          text: "내버려둔다",
+          effects: { finance: 10, development: -4, happiness: -15 },
         },
       ],
     },
     {
-      prompt: "올해 예산이 줄어 우선 사업을 정해야 합니다",
+      prompt: "길거리가 어둡습니다",
       choices: [
         {
-          text: "노후 시설 안전 점검과 보수에 집중한다",
-          effects: { transport: 6, happiness: 5, development: 2 },
+          text: "가로등을 대대적으로 설치한다",
+          effects: { finance: -15, development: 5, happiness: 5 },
         },
         {
-          text: "기초 복지와 생활환경 개선을 우선한다",
-          effects: { happiness: 7, environment: 5, development: -1 },
+          text: "위험 지역 위주로 일부만 설치한다",
+          effects: { finance: -8, development: 3, happiness: 2 },
         },
         {
-          text: "개발 사업 중심으로 세수 확대를 노린다",
-          effects: { development: 8, transport: 2, environment: -4, happiness: -2 },
+          text: "내버려둔다",
+          effects: { finance: 10, development: -5, happiness: -5 },
         },
       ],
     },
   ],
   normal: [
     {
-      prompt: "출근 시간(07:30~09:30) 중앙대로 평균 통행속도가 시속 16km로 떨어졌습니다",
+      prompt: "아이를 찾아달라는 신고가 들어왔습니다",
       choices: [
         {
-          text: "중앙대로 2km 구간에 버스전용차로를 설치한다",
-          effects: { transport: 11, environment: 4, happiness: 2, development: -2 },
+          text: "대규모 수색 인력을 투입한다",
+          effects: { finance: -10, development: 4, environment: -1, happiness: 5 },
         },
         {
-          text: "교차로 6곳 신호를 재설계해 직진 흐름을 우선한다",
-          effects: { transport: 8, development: 5, environment: -4, happiness: -1 },
+          text: "실종 경보 방송과 CCTV 추적을 병행한다",
+          effects: { development: 2, happiness: -3 },
         },
         {
-          text: "도심 주차요금을 2배 인상하고 환승주차장을 늘린다",
-          effects: { transport: 7, environment: 6, happiness: -3, development: 1 },
+          text: "무시한다",
+          effects: { happiness: -15, development: -3 },
         },
       ],
     },
     {
-      prompt: "여름철 폭염일수가 늘어 보행자 열사병 신고가 급증했습니다",
+      prompt: "일자리가 부족합니다",
       choices: [
         {
-          text: "초등학교 주변 12개 블록에 그늘수목을 집중 식재한다",
-          effects: { environment: 10, happiness: 8, development: -2 },
+          text: "기업 의무 채용 정책을 시행한다",
+          effects: { finance: -25, happiness: 15, development: 5 },
         },
         {
-          text: "보행로 바닥을 고반사 포장으로 교체한다",
-          effects: { environment: 7, transport: 2, happiness: 5, development: 1 },
+          text: "직업 교육과 창업 지원을 함께 늘린다",
+          effects: { finance: -12, happiness: 8, development: 4 },
         },
         {
-          text: "냉방 지원 예산을 확대하고 녹지 사업은 축소한다",
-          effects: { happiness: 6, development: 4, environment: -6 },
+          text: "내버려둔다",
+          effects: { finance: 20, happiness: -20, development: -6 },
         },
       ],
     },
     {
-      prompt: "대중교통 순환율이 낮아 환승 대기 불만이 커졌습니다",
+      prompt: "강력 범죄가 발생했습니다",
       choices: [
         {
-          text: "버스 도착정보 오차를 줄이는 통합 관제 시스템을 구축한다",
-          effects: { transport: 10, happiness: 5, development: 3 },
+          text: "경찰 인력과 순찰을 대폭 강화한다",
+          effects: { finance: -20, development: 7, happiness: 15 },
         },
         {
-          text: "지하철 환승 동선을 개편해 도보 이동거리를 줄인다",
-          effects: { transport: 8, happiness: 7, development: -1 },
+          text: "방범 카메라와 신고 체계를 확대한다",
+          effects: { finance: -10, development: 4, happiness: 6 },
         },
         {
-          text: "혼잡 노선 대신 외곽 신규노선 확장에 집중한다",
-          effects: { development: 9, transport: 4, happiness: -2, environment: -3 },
+          text: "내버려둔다",
+          effects: { finance: 15, happiness: -20, development: -8 },
         },
       ],
     },
     {
-      prompt: "산업단지 인근 PM2.5 수치가 권고 기준을 반복 초과했습니다",
+      prompt: "집값이 너무 비쌉니다",
       choices: [
         {
-          text: "배출량 상위 공장 20곳에 저감설비 의무화를 시행한다",
-          effects: { environment: 12, development: -4, happiness: 3 },
+          text: "주거 지역을 대폭 늘린다",
+          effects: { finance: -30, environment: -10, development: 10, happiness: 5 },
         },
         {
-          text: "산업단지 물류를 철도 중심으로 전환한다",
-          effects: { environment: 9, transport: 6, development: -2, happiness: 1 },
+          text: "공공주택과 기반시설을 함께 확충한다",
+          effects: { finance: -18, environment: -6, development: 6, happiness: 4 },
         },
         {
-          text: "규제를 완화해 공장 가동률을 우선 회복한다",
-          effects: { development: 11, environment: -9, happiness: -2 },
+          text: "내버려둔다",
+          effects: { finance: 20, happiness: -15, development: -5 },
         },
       ],
     },
     {
-      prompt: "청년층 이주율이 떨어져 도심 공동화 조짐이 나타났습니다",
+      prompt: "쓰레기 매립지가 부족합니다",
       choices: [
         {
-          text: "공공임대 주택과 창업공간을 결합한 복합지구를 조성한다",
-          effects: { happiness: 8, development: 8, environment: -2 },
+          text: "추가 매립지를 확보한다",
+          effects: { finance: -15, happiness: -10, environment: 5, development: 3 },
         },
         {
-          text: "소규모 문화공간과 야간 대중교통을 동시에 확대한다",
-          effects: { happiness: 10, transport: 6, development: 2 },
+          text: "재활용과 분리수거 시스템을 강화한다",
+          effects: { finance: -10, environment: 10, development: 2 },
         },
         {
-          text: "민간 대형 상업시설 유치에 행정 자원을 집중한다",
-          effects: { development: 10, happiness: -3, environment: -4 },
+          text: "내버려둔다",
+          effects: { finance: 15, environment: -13, development: -4 },
         },
       ],
     },
     {
-      prompt: "재정 여력이 줄어 내년도 도시 예산을 선택과 집중해야 합니다",
+      prompt: "대기업 본사가 우리 도시에 관심을 보입니다",
       choices: [
         {
-          text: "노후 상하수도와 도로 유지보수에 우선 배정한다",
-          effects: { transport: 7, happiness: 5, development: 2 },
+          text: "지원 정책을 펼쳐 본사 이전을 유도한다",
+          effects: { finance: -10, development: 15, environment: -15, happiness: 10 },
         },
         {
-          text: "기후 대응 인프라(빗물저류·도심숲)를 우선 투자한다",
-          effects: { environment: 11, happiness: 6, development: -3 },
+          text: "조건부로 제한적 지원만 제공한다",
+          effects: { finance: -6, development: 10, environment: -6, happiness: 6 },
         },
         {
-          text: "세금 인상 없이 민간투자 사업으로만 추진한다",
-          effects: { development: 9, transport: 3, environment: -5, happiness: -2 },
+          text: "거부한다",
+          effects: { happiness: -7, development: -5, environment: 15 },
         },
       ],
     },
   ],
   hard: [
     {
-      prompt: "광역철도 연계사업과 도심 재개발 일정이 충돌해 교통혼잡과 상권 반발이 동시에 커졌습니다",
+      prompt: "오일쇼크가 발생했습니다",
       choices: [
         {
-          text: "재개발 일정 일부를 연기하고 환승체계부터 완성한다",
-          effects: { transport: 12, happiness: 4, development: -4 },
+          text: "유가 보조금 정책을 실시한다",
+          effects: { finance: -25, happiness: 7, development: 3 },
         },
         {
-          text: "공사를 병행하되 공사구간 통행료를 탄력 적용한다",
-          effects: { transport: 7, development: 7, happiness: -3, environment: -2 },
+          text: "가격 제한 정책을 시행한다",
+          effects: { finance: -15, development: -3, happiness: 2 },
         },
         {
-          text: "재개발을 우선해 세수 확보 후 교통대책을 추진한다",
-          effects: { development: 11, transport: -2, happiness: -4, environment: -3 },
+          text: "시장에 맡기고 버틴다",
+          effects: { finance: 10, happiness: -12, development: -8 },
         },
       ],
     },
     {
-      prompt: "폭우 빈도가 높아져 상습 침수지와 열섬 지역이 겹치는 복합 재난 위험이 증가했습니다",
+      prompt: "지진이 발생했습니다",
       choices: [
         {
-          text: "침수저감 인프라와 도심숲을 묶은 복합 사업으로 전환한다",
-          effects: { environment: 12, happiness: 5, development: -3, transport: 2 },
+          text: "피해 지역 재개발을 실시한다",
+          effects: { finance: -25, happiness: -4, environment: -5, development: 8 },
         },
         {
-          text: "배수관 확충에 집중하고 녹지 조성은 민간에 맡긴다",
-          effects: { transport: 8, development: 6, environment: -3, happiness: -1 },
+          text: "사고 수습과 내진 설계 정책을 함께 시행한다",
+          effects: { finance: -20, happiness: 5, environment: 2, development: 7 },
         },
         {
-          text: "재난 대응 예산을 분산 집행해 단기 민원부터 처리한다",
-          effects: { happiness: 2, development: 3, environment: -5, transport: -2 },
+          text: "최소한의 복구만 진행한다",
+          effects: { finance: -5, happiness: 5, development: -5 },
         },
       ],
     },
     {
-      prompt: "대중교통 적자가 누적되며 요금 인상 요구와 서비스 질 하락이 동시에 발생했습니다",
+      prompt: "빈부격차가 너무 심해졌습니다",
       choices: [
         {
-          text: "요금은 동결하고 혼잡 노선에만 선택적 증편을 시행한다",
-          effects: { happiness: 6, transport: 7, development: -2 },
+          text: "대규모 복지 정책을 시행한다",
+          effects: { finance: -30, happiness: 18, development: 2 },
         },
         {
-          text: "요금을 인상하되 저소득층 이동 바우처를 도입한다",
-          effects: { development: 5, transport: 6, happiness: -1, environment: 2 },
+          text: "세금과 복지 체계를 개편한다",
+          effects: { finance: 25, happiness: -12, development: -2 },
         },
         {
-          text: "요금 정상화와 민간 위탁 확대를 동시에 추진한다",
-          effects: { development: 9, transport: 4, happiness: -4, environment: -2 },
+          text: "무시한다",
+          effects: { finance: 10, happiness: -20, development: -5 },
         },
       ],
     },
     {
-      prompt: "산업단지 고용 유지를 위해 규제 완화 압박이 커졌지만 건강영향 조사 결과는 악화 추세입니다",
+      prompt: "전력 공급이 부족합니다",
       choices: [
         {
-          text: "강한 배출 규제를 유지하고 친환경 전환 보조금을 연계한다",
-          effects: { environment: 11, happiness: 4, development: -3 },
+          text: "발전소를 건설한다",
+          effects: { finance: -15, environment: -10, development: 12 },
         },
         {
-          text: "규제 유예를 허용하되 주민 모니터링 위원회를 구성한다",
-          effects: { development: 6, happiness: 1, environment: -3, transport: 2 },
+          text: "다른 도시로부터 전력을 공급받는다",
+          effects: { finance: -20, development: 5 },
         },
         {
-          text: "규제를 일괄 완화해 단기 고용 지표를 방어한다",
-          effects: { development: 12, environment: -10, happiness: -3 },
+          text: "무시한다",
+          effects: { finance: 20, happiness: -13, development: -10 },
         },
       ],
     },
     {
-      prompt: "구도심 공동화와 외곽 난개발이 동시에 진행되며 생활권 불균형이 심화되고 있습니다",
+      prompt: "기업 파산 위기가 닥쳤습니다",
       choices: [
         {
-          text: "구도심 생활SOC와 공공주택을 결합한 재생축을 만든다",
-          effects: { happiness: 8, development: 6, environment: 3, transport: 2 },
+          text: "긴급 구제금융을 투입해 회생을 돕는다",
+          effects: { finance: -35, environment: -10, development: 15, happiness: 7 },
         },
         {
-          text: "외곽 신도시 인허가를 확대해 공급 속도를 높인다",
-          effects: { development: 10, transport: 2, environment: -5, happiness: -2 },
+          text: "구조조정과 산업 전환을 조건으로 지원한다",
+          effects: { finance: -10, environment: -3, development: 6, happiness: 4 },
         },
         {
-          text: "생활권 통합을 위해 핵심 거점만 선택 집중 개발한다",
-          effects: { development: 7, transport: 5, happiness: 1, environment: -1 },
+          text: "무시한다",
+          effects: { finance: 10, development: -20, happiness: -10, environment: 13 },
         },
       ],
     },
     {
-      prompt: "국비 지원 축소로 필수사업을 줄여야 하는데, 시민은 서비스 유지와 세금 동결을 동시에 요구합니다",
+      prompt: "사이버 테러가 발생했습니다",
       choices: [
         {
-          text: "필수 인프라 유지에 집중하고 신규 사업은 전면 재검토한다",
-          effects: { transport: 7, happiness: 3, development: -2, environment: 2 },
+          text: "보안 시스템을 전면 개편한다",
+          effects: { finance: -15, happiness: -3, development: 5 },
         },
         {
-          text: "탄소 감축 사업만 보호하고 나머지 예산을 단계 축소한다",
-          effects: { environment: 10, development: -3, happiness: 2, transport: 1 },
+          text: "핵심 기능만 복구하고 단계적으로 대응한다",
+          effects: { finance: -5, happiness: -7, development: 2 },
         },
         {
-          text: "민자 사업 비중을 높여 단기 재정 부담을 낮춘다",
-          effects: { development: 8, transport: 3, environment: -4, happiness: -3 },
+          text: "무시한다",
+          effects: { finance: 10, happiness: -10, development: -4 },
         },
       ],
     },
@@ -338,12 +338,6 @@ const DIFFICULTY_LEVELS = {
     sideEffectChance: 0.55,
     sideEffectRange: [2, 6],
   },
-};
-
-const PERFECT_ROUTE_CHOICES = {
-  easy: [0, 0, 0, 0, 0, 0],
-  normal: [0, 0, 0, 0, 0, 0],
-  hard: [0, 0, 0, 0, 0, 0],
 };
 
 const screens = {
@@ -381,9 +375,9 @@ const statElements = {
     value: document.getElementById("environment-value"),
     bar: document.getElementById("environment-bar"),
   },
-  transport: {
-    value: document.getElementById("transport-value"),
-    bar: document.getElementById("transport-bar"),
+  finance: {
+    value: document.getElementById("finance-value"),
+    bar: document.getElementById("finance-bar"),
   },
   happiness: {
     value: document.getElementById("happiness-value"),
@@ -450,10 +444,10 @@ updateSelectedDifficultyLabel();
 
 function createInitialStats() {
   return {
-    environment: 50,
-    transport: 50,
+    environment: 40,
+    finance: 80,
     happiness: 50,
-    development: 50,
+    development: 30,
   };
 }
 
@@ -560,6 +554,8 @@ function applyChoiceEffects(effects, choiceIndex) {
     stats[statName] = clamp(stats[statName] + delta);
   });
 
+  stats.finance = clamp(stats.finance + calculateRoundIncome(stats.development));
+
   updateStatsUI();
   updateCityVisual("game");
 
@@ -582,15 +578,16 @@ function updateStatsUI() {
 
 function updateCityVisual(mode) {
   const layers = cityLayers[mode];
-  const { environment, transport, happiness, development } = stats;
+  const { environment, finance, happiness, development } = stats;
+  const infrastructure = calculateInfrastructureScore();
 
   const skyTop = blendColor("#75838f", "#6fd0ff", environment / 100);
   const skyBottom = blendColor("#c0c5ca", "#dff8ff", environment / 100);
-  const roadColor = blendColor("#6f5f5f", "#445a6d", transport / 100);
-  const roadMarkingOpacity = (0.2 + transport / 140).toFixed(2);
+  const roadColor = blendColor("#6f5f5f", "#445a6d", infrastructure / 100);
+  const roadMarkingOpacity = (0.2 + infrastructure / 140).toFixed(2);
   const treeColor = blendColor("#6f7f61", "#42b659", environment / 100);
   const smogOpacity = Math.max(0, (100 - environment) / 110 + development / 300).toFixed(2);
-  const stageGlow = happiness > 60 ? "rgba(255, 211, 112, 0.24)" : "rgba(120, 126, 138, 0.12)";
+  const stageGlow = finance > 60 ? "rgba(119, 190, 255, 0.22)" : happiness > 60 ? "rgba(255, 211, 112, 0.24)" : "rgba(120, 126, 138, 0.12)";
 
   layers.stage.style.setProperty("--sky-top", skyTop);
   layers.stage.style.setProperty("--sky-bottom", skyBottom);
@@ -603,8 +600,8 @@ function updateCityVisual(mode) {
   layers.backBuildings.innerHTML = renderBuildings(Math.max(4, Math.round(4 + development / 25)), development, true);
   layers.frontBuildings.innerHTML = renderBuildings(Math.max(5, Math.round(5 + development / 20)), development, false);
   layers.park.innerHTML = renderParksAndTrees(environment);
-  layers.road.innerHTML = renderRoad(transport);
-  layers.transport.innerHTML = renderTransport(transport, environment);
+  layers.road.innerHTML = renderRoad(infrastructure);
+  layers.transport.innerHTML = renderTransport(infrastructure, environment);
   layers.happiness.innerHTML = renderHappiness(happiness);
   layers.smog.style.opacity = smogOpacity;
 }
@@ -709,34 +706,34 @@ function renderHappiness(happinessValue) {
 }
 
 function calculateFinalType() {
-  const { environment, transport, happiness, development } = stats;
-  const balanced = [environment, transport, happiness, development].every((value) => value >= 45 && value <= 75);
+  const { environment, finance, happiness, development } = stats;
+  const balanced = [environment, finance, happiness, development].every((value) => value >= 40 && value <= 75);
 
-  if (environment >= 70 && happiness >= 70) {
+  if (environment >= 70 && happiness >= 70 && finance >= 45) {
     return {
       title: "지속가능한 친환경 도시",
       description: "깨끗한 공기와 녹지, 시민의 삶의 질을 잘 지켜낸 도시입니다. 건강하고 활기차며 미래지향적인 모습입니다.",
     };
   }
 
-  if (development >= 75 && environment <= 45) {
+  if (development >= 75 && environment <= 35) {
     return {
-      title: "자동차 중심의 회색 도시",
-      description: "개발은 빠르게 진행됐지만 자연과 공기 질이 뒤로 밀렸습니다. 도로와 차량 중심의 복잡한 도시가 되었습니다.",
+      title: "과열 개발 중심 도시",
+      description: "성장은 빨랐지만 환경과 삶의 질이 밀려났습니다. 성과는 크지만 오래 버티기 어려운 도시입니다.",
     };
   }
 
   if (balanced) {
     return {
-      title: "균형 잡힌 스마트 도시",
-      description: "환경, 교통, 행복, 발전을 고르게 관리했습니다. 극단적이진 않지만 안정적이고 지속 가능한 도시입니다.",
+      title: "균형 잡힌 지속가능 도시",
+      description: "제정, 발전, 행복, 환경을 고르게 관리했습니다. 화려하진 않아도 안정적이고 오래 가는 도시입니다.",
     };
   }
 
-  if (development >= 75 && happiness <= 45) {
+  if (finance <= 25 && happiness <= 45) {
     return {
-      title: "과개발 스트레스 도시",
-      description: "건물과 개발은 빠르게 늘었지만 시민의 만족도는 떨어졌습니다. 효율적이지만 살기 편한 도시는 아닙니다.",
+      title: "재정 압박 도시",
+      description: "문제를 해결하려고 많이 투자했지만 제정 여력이 크게 줄었습니다. 다음 위기에 대비한 체력 회복이 필요합니다.",
     };
   }
 
@@ -747,27 +744,20 @@ function calculateFinalType() {
 }
 
 function calculateTotalScore() {
-  return stats.environment + stats.transport + stats.happiness + stats.development;
+  return Math.round(
+    0.4 * stats.finance ** 2
+      + stats.development ** 2
+      + stats.happiness ** 2
+      + stats.environment ** 2,
+  );
 }
 
 function showResultScreen() {
-  const isPerfectRoute = isPerfectRouteForRun();
-  if (isPerfectRoute) {
-    stats = {
-      environment: 100,
-      transport: 100,
-      happiness: 100,
-      development: 100,
-    };
-  }
-
   const finalType = calculateFinalType();
 
   progressFill.style.width = "100%";
   resultCityType.textContent = finalType.title;
-  resultFeedback.textContent = isPerfectRoute
-    ? `${finalType.description} 만점 루트를 달성했습니다.`
-    : finalType.description;
+  resultFeedback.textContent = `${finalType.description} 총점은 제정 가중치가 반영된 최종 운영 성과입니다.`;
   resultScore.textContent = `총점: ${calculateTotalScore()}점`;
   resultStats.innerHTML = Object.entries(stats)
     .map(
@@ -779,24 +769,6 @@ function showResultScreen() {
   updateCityVisual("result");
   saveStatus.textContent = "";
   showScreen("result");
-}
-
-function hasPerfectRouteForDifficulty(difficulty) {
-  const route = PERFECT_ROUTE_CHOICES[difficulty];
-  return Array.isArray(route) && route.length === activeQuestions.length;
-}
-
-function isPerfectRouteForRun() {
-  if (!hasPerfectRouteForDifficulty(currentDifficulty)) {
-    return false;
-  }
-
-  const route = PERFECT_ROUTE_CHOICES[currentDifficulty];
-  if (!Array.isArray(route) || selectedChoiceIndexes.length !== route.length) {
-    return false;
-  }
-
-  return route.every((expectedIndex, roundIndex) => selectedChoiceIndexes[roundIndex] === expectedIndex);
 }
 
 async function saveResult() {
@@ -1045,12 +1017,20 @@ function clamp(value) {
 function getStatLabel(name) {
   const labels = {
     environment: "환경",
-    transport: "교통",
+    finance: "제정",
     happiness: "행복",
     development: "발전",
   };
 
   return labels[name] || name;
+}
+
+function calculateInfrastructureScore() {
+  return clamp(Math.round(stats.finance * 0.45 + stats.development * 0.55));
+}
+
+function calculateRoundIncome(developmentValue) {
+  return Math.round(developmentValue * 0.5);
 }
 
 function blendColor(colorA, colorB, amount) {
@@ -1200,16 +1180,16 @@ function sanitizeApiBaseUrl(rawValue) {
 
 function getDifficultyGuideText(level) {
   if (level === "easy") {
-    return "효과 방향(상승/하락)이 보입니다. 입문용으로 가장 직관적입니다.";
+    return "효과 방향이 보입니다. 선택 뒤에는 발전도 절반만큼 제정이 회복됩니다.";
   }
 
   if (level === "normal") {
-    return "수치가 숨겨지고 결과가 조금 흔들립니다. 균형 잡힌 플레이에 적합합니다.";
+    return "수치가 숨겨지고 결과가 조금 흔들립니다. 제정과 행복의 균형을 신경 써 보세요.";
   }
 
   if (level === "hard") {
-    return "효과 정보가 거의 숨겨집니다. 리스크를 감수하고 전략적으로 선택하세요.";
+    return "효과 정보가 거의 숨겨집니다. 큰 위기가 나오니 제정 여력을 남겨두는 편이 안전합니다.";
   }
 
-  return "선택하면 즉시 도시 상태가 반영됩니다.";
+  return "선택 결과가 적용된 뒤 발전도에 따라 제정이 일부 회복됩니다.";
 }

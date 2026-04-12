@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>도시 진화 시뮬레이터</title>
+    <title>지속가능 도시 운영 게임</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -22,15 +22,15 @@
       <section id="start-screen" class="screen active">
         <div class="hero-card">
           <p class="eyebrow">SDG 11 • 지속가능한 도시와 공동체</p>
-          <h1>도시 진화 시뮬레이터</h1>
+          <h1>지속가능 도시 운영 게임</h1>
           <p class="hero-copy">
-            6번의 도시 정책 선택을 하고, 선택할 때마다 도시가 바로 변하는 모습을 확인하세요.
-            더 푸르고, 더 행복하고, 더 편리한 도시를 만들어 보세요.
+            도시에서 벌어지는 문제에 맞춰 정책을 선택하고, 제정과 발전, 행복, 환경의 균형을 지켜 보세요.
+            선택할 때마다 도시의 모습이 바뀌고 마지막 점수에 따라 다른 엔딩이 열립니다.
           </p>
           <div class="hero-pills">
-            <span>빠른 체험형 게임</span>
-            <span>6번의 선택</span>
-            <span>즉시 도시 변화</span>
+            <span>정책 선택형 운영 게임</span>
+            <span>6개의 도시 이슈</span>
+            <span>멀티 엔딩</span>
           </div>
           <p id="selected-difficulty-label" class="selected-difficulty-label">난이도: 선택 필요</p>
           <button id="start-button" class="primary-button start-button">게임 시작</button>
@@ -39,7 +39,7 @@
           <div class="difficulty-dialog">
             <p class="eyebrow">게임 시작 전</p>
             <h3 id="difficulty-title">난이도를 선택하세요</h3>
-            <p class="difficulty-copy">난이도가 높을수록 선택 결과가 덜 예측 가능해집니다.</p>
+            <p class="difficulty-copy">학년과 플레이 감각에 맞춰 사건 강도와 정보 공개 범위가 달라집니다.</p>
             <div id="difficulty-options" class="difficulty-options">
               <button type="button" class="difficulty-option" data-difficulty="easy">
                 <strong>쉬움</strong>
@@ -105,9 +105,9 @@
                 <div class="stat-bar"><div id="environment-bar" class="stat-fill environment"></div></div>
               </div>
               <div class="stat-block">
-                <span>교통</span>
-                <strong id="transport-value">50</strong>
-                <div class="stat-bar"><div id="transport-bar" class="stat-fill transport"></div></div>
+                <span>제정</span>
+                <strong id="finance-value">80</strong>
+                <div class="stat-bar"><div id="finance-bar" class="stat-fill finance"></div></div>
               </div>
               <div class="stat-block">
                 <span>행복</span>
@@ -125,7 +125,7 @@
           <aside class="question-panel">
             <p class="eyebrow">이번 선택</p>
             <h3 id="question-title"></h3>
-            <p id="choice-helper" class="choice-helper">선택하면 즉시 도시 상태가 반영됩니다.</p>
+            <p id="choice-helper" class="choice-helper">선택 결과가 적용된 뒤 발전도에 따라 제정이 일부 회복됩니다.</p>
             <div id="choices-container" class="choices-container"></div>
           </aside>
         </div>
@@ -150,7 +150,7 @@
 
           <div class="result-card">
             <p class="eyebrow">최종 결과</p>
-            <h2 id="result-city-type">균형 잡힌 스마트 도시</h2>
+            <h2 id="result-city-type">균형 잡힌 지속가능 도시</h2>
             <p id="result-feedback" class="result-feedback"></p>
             <div id="result-score" class="result-score"></div>
             <div id="result-stats" class="result-stats"></div>
@@ -172,7 +172,7 @@
         <div class="leaderboard-card">
           <div class="leaderboard-header">
             <div>
-              <p class="eyebrow">최고의 도시 설계자</p>
+              <p class="eyebrow">최고의 도시 운영자</p>
               <h2>리더보드</h2>
             </div>
             <div class="leaderboard-actions">
