@@ -72,6 +72,25 @@ app.post("/api/result", applyFirestoreRateLimit, async (req, res) => {
   }
 });
 
+app.get("/api/reset", (req, res) => {
+  if (!RESET_PASSWORD) {
+    return res.status(503).json({
+      ok: false,
+      error: "Reset endpoint is disabled.",
+      method: "POST",
+      path: "/api/reset",
+    });
+  }
+
+  res.json({
+    ok: true,
+    message: "Use POST /api/reset with JSON body { password }.",
+    method: "POST",
+    path: "/api/reset",
+    resetEnabled: true,
+  });
+});
+
 app.post("/api/reset", applyFirestoreRateLimit, async (req, res) => {
   if (!RESET_PASSWORD) {
     return res.status(503).json({

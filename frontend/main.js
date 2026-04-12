@@ -1111,18 +1111,18 @@ function buildApiBaseCandidates(baseUrl) {
   const normalized = String(baseUrl || "").trim().replace(/\/+$/, "");
 
   if (!normalized) {
-    return ["", "/_/backend"];
+    return ["/_/backend"];
   }
 
   if (normalized === "/_/backend") {
-    return ["/_/backend", ""];
+    return ["/_/backend"];
   }
 
   if (normalized.startsWith("http://") || normalized.startsWith("https://")) {
     return [normalized];
   }
 
-  return [normalized, "", "/_/backend"];
+  return normalized.startsWith("/") ? [normalized, "/_/backend"] : [normalized];
 }
 
 async function requestApi(pathname, options) {
