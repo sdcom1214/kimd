@@ -744,20 +744,26 @@ function calculateFinalType() {
 }
 
 function calculateTotalScore() {
-  return Math.round(
-    0.4 * stats.finance ** 2
-      + stats.development ** 2
-      + stats.happiness ** 2
-      + stats.environment ** 2,
+  const weightedAverage = (
+    stats.environment * 0.3
+    + stats.finance * 0.2
+    + stats.happiness * 0.25
+    + stats.development * 0.25
   );
+  const statValues = Object.values(stats);
+  const spread = Math.max(...statValues) - Math.min(...statValues);
+  const balanceBonus = Math.max(0, 120 - spread * 2);
+  const difficultyBonus = getDifficultyBonus(currentDifficulty);
+
+  return Math.round(weightedAverage * 8 + balanceBonus + difficultyBonus);
 }
 
-function showResultScreen() {
+showResultScreen = function showResultScreenPatched() {
   const finalType = calculateFinalType();
 
   progressFill.style.width = "100%";
   resultCityType.textContent = finalType.title;
-  resultFeedback.textContent = `${finalType.description} 총점은 제정 가중치가 반영된 최종 운영 성과입니다.`;
+  resultFeedback.textContent = `${finalType.description} 총점은 가중 평균 + 균형 보너스 + 난이도 보너스로 계산됩니다.`;
   resultScore.textContent = `총점: ${calculateTotalScore()}점`;
   resultStats.innerHTML = Object.entries(stats)
     .map(
@@ -769,7 +775,7 @@ function showResultScreen() {
   updateCityVisual("result");
   saveStatus.textContent = "";
   showScreen("result");
-}
+};
 
 async function saveResult() {
   if (hasSavedCurrentRun) {
@@ -1176,6 +1182,18 @@ function sanitizeApiBaseUrl(rawValue) {
   }
 
   return `https://${value}`;
+}
+
+function getDifficultyBonus(level) {
+  if (level === "hard") {
+    return 80;
+  }
+
+  if (level === "normal") {
+    return 40;
+  }
+
+  return 0;
 }
 
 function getDifficultyGuideText(level) {
