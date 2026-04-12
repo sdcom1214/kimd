@@ -170,10 +170,9 @@ async function applyFirestoreRateLimit(req, res, next) {
     next();
   } catch (error) {
     console.error("Rate limit check failed:", error);
-    res.status(503).json({
-      ok: false,
-      error: "Rate limit service is temporarily unavailable.",
-    });
+    // Keep the API available even when the limiter backend is temporarily unhealthy.
+    res.setHeader("X-RateLimit-Bypass", "true");
+    next();
   }
 }
 
