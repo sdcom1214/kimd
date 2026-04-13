@@ -38,8 +38,6 @@ function createStorage() {
           firestore
             .collection(LEADERBOARD_COLLECTION)
             .where("difficulty", "==", difficulty)
-            .orderBy("totalScore", "desc")
-            .limit(safeLimit)
             .get(),
         ),
       );
@@ -54,7 +52,8 @@ function createStorage() {
             }
 
             return right.timestamp - left.timestamp;
-          });
+          })
+          .slice(0, safeLimit);
       });
 
       return grouped;
