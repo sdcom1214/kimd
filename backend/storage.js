@@ -4,6 +4,7 @@ const { getFirestore } = require("firebase-admin/firestore");
 
 const REQUIRED_STATS = ["environment", "finance", "happiness", "development"];
 const LEADERBOARD_COLLECTION = "leaderboard_entries";
+const LEADERBOARD_COLLECTION_PREFIX = "leaderboard_entries_";
 const RATE_LIMIT_COLLECTION = "request_rate_limits";
 const DIFFICULTIES = ["easy", "normal", "hard"];
 
@@ -36,8 +37,9 @@ function createStorage() {
       const snapshots = await Promise.all(
         DIFFICULTIES.map((difficulty) =>
           firestore
-            .collection(LEADERBOARD_COLLECTION)
-            .where("difficulty", "==", difficulty)
+            .collection(getLeaderboardCollectionName(difficulty))
+            .orderBy("totalScore", "desc")
+            .limit(safeLimit)
             .get(),
         ),
       );
@@ -52,8 +54,7 @@ function createStorage() {
             }
 
             return right.timestamp - left.timestamp;
-          })
-          .slice(0, safeLimit);
+          });
       });
 
       return grouped;
@@ -61,7 +62,9 @@ function createStorage() {
     async saveResult(record) {
       await ready;
       const payload = normalizePersistedRecord(record);
-      const reference = await firestore.collection(LEADERBOARD_COLLECTION).add(payload);
+      const reference = await firestore
+        .collection(getLeaderboardCollectionName(payload.difficulty))
+        .add(payload);
       return normalizeEntry(reference.id, payload);
     },
     async resetLeaderboard() {
@@ -80,6 +83,23 @@ function createStorage() {
         });
         await batch.commit();
         deletedCount += snapshot.docs.length;
+      }
+
+      for (const difficulty of DIFFICULTIES) {
+        const collectionName = getLeaderboardCollectionName(difficulty);
+        while (true) {
+          const snapshot = await firestore.collection(collectionName).limit(200).get();
+          if (snapshot.empty) {
+            break;
+          }
+
+          const batch = firestore.batch();
+          snapshot.docs.forEach((document) => {
+            batch.delete(document.ref);
+          });
+          await batch.commit();
+          deletedCount += snapshot.docs.length;
+        }
       }
 
       return deletedCount;
@@ -293,6 +313,10 @@ function normalizeDifficulty(value) {
     return difficulty;
   }
   return "normal";
+}
+
+function getLeaderboardCollectionName(difficulty) {
+  return `${LEADERBOARD_COLLECTION_PREFIX}${normalizeDifficulty(difficulty)}`;
 }
 
 function normalizeRateLimitKey(value) {

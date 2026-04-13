@@ -419,8 +419,8 @@ document.getElementById("replay-button").addEventListener("click", beginDifficul
 document.getElementById("leaderboard-replay-button").addEventListener("click", beginDifficultySelection);
 document.getElementById("back-to-start-button").addEventListener("click", () => showScreen("start"));
 document.getElementById("view-leaderboard-button").addEventListener("click", async () => {
-  await fetchLeaderboard();
   showScreen("leaderboard");
+  void fetchLeaderboard();
 });
 document.getElementById("save-result-button").addEventListener("click", saveResult);
 confirmDifficultyButton.addEventListener("click", () => {
@@ -814,9 +814,9 @@ async function saveResult() {
     }
 
     hasSavedCurrentRun = true;
-    saveStatus.textContent = "저장되었습니다. 리더보드를 여는 중입니다...";
-    await fetchLeaderboard();
+    saveStatus.textContent = "저장되었습니다. 리더보드를 불러오는 중입니다...";
     showScreen("leaderboard");
+    void fetchLeaderboard();
   } catch (error) {
     console.error(error);
     saveStatus.textContent = `결과를 저장하지 못했습니다. API 경로(${formatApiBaseCandidates(API_BASE_CANDIDATES)})를 확인하세요.`;
