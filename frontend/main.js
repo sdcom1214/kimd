@@ -758,7 +758,7 @@ function calculateTotalScore() {
   return Math.round(weightedAverage * 8 + balanceBonus + difficultyBonus);
 }
 
-showResultScreen = function showResultScreenPatched() {
+function showResultScreen() {
   const finalType = calculateFinalType();
 
   progressFill.style.width = "100%";
@@ -775,7 +775,7 @@ showResultScreen = function showResultScreenPatched() {
   updateCityVisual("result");
   saveStatus.textContent = "";
   showScreen("result");
-};
+}
 
 async function saveResult() {
   if (hasSavedCurrentRun) {
