@@ -172,12 +172,13 @@ function resolveFirebaseAdminConfig() {
   return {
     projectId: readRequiredEnv("FIREBASE_PROJECT_ID"),
     clientEmail: readRequiredEnv("FIREBASE_CLIENT_EMAIL"),
-    privateKey: normalizePrivateKey(readRequiredEnv("FIREBASE_PRIVATE_KEY")),
+    privateKey: normalizePrivateKey(readRequiredEnv("FIREBASE_PRIVATE_KEY", { multiline: true })),
   };
 }
 
-function readRequiredEnv(name) {
-  const value = String(process.env[name] || "").trim();
+function readRequiredEnv(name, options = {}) {
+  const { multiline = false } = options;
+  const value = normalizeEnvValue(process.env[name], { multiline });
   if (!value) {
     throw new Error(`${name} is required.`);
   }
@@ -185,8 +186,42 @@ function readRequiredEnv(name) {
   return value;
 }
 
+function normalizeEnvValue(rawValue, options = {}) {
+  const { multiline = false } = options;
+  const raw = String(rawValue ?? "");
+  const trimmed = raw.trim();
+  const unquoted = (
+    (trimmed.startsWith("\"") && trimmed.endsWith("\""))
+    || (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  )
+    ? trimmed.slice(1, -1)
+    : trimmed;
+
+  if (multiline) {
+    return unquoted.trim();
+  }
+
+  return unquoted
+    .replace(/\r?\n/g, "")
+    .replace(/\\r\\n/g, "")
+    .replace(/\\n/g, "")
+    .trim();
+}
+
 function normalizePrivateKey(value) {
-  return value.replace(/\\n/g, "\n");
+  const trimmed = String(value || "").trim();
+  const unquoted = (
+    (trimmed.startsWith("\"") && trimmed.endsWith("\""))
+    || (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  )
+    ? trimmed.slice(1, -1)
+    : trimmed;
+
+  return unquoted
+    .replace(/\\r\\n/g, "\n")
+    .replace(/\\n/g, "\n")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n");
 }
 
 function normalizePersistedRecord(record) {
