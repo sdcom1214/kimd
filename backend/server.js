@@ -8,7 +8,13 @@ const PORT = process.env.PORT || 3100;
 const RESET_PASSWORD = typeof process.env.RESET_PASSWORD === "string" ? process.env.RESET_PASSWORD.trim() : "";
 const FIRESTORE_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 const FIRESTORE_RATE_LIMIT_MAX_REQUESTS = 20;
+const LEADERBOARD_CACHE_TTL_MS = 15 * 1000;
 const storage = createStorage();
+const inMemoryRateLimits = new Map();
+let leaderboardCache = {
+  data: null,
+  expiresAt: 0,
+};
 
 app.disable("x-powered-by");
 app.set("trust proxy", true);
@@ -37,8 +43,14 @@ app.get("/api/health", async (req, res) => {
 
 app.get("/api/leaderboard", applyFirestoreRateLimit, async (req, res) => {
   try {
+    const cached = getLeaderboardCache();
+    if (cached) {
+      return res.json(cached);
+    }
+
     const limit = parseLimit(req.query.limit);
     const grouped = await storage.getLeaderboard(limit);
+    setLeaderboardCache(grouped);
     res.json(grouped);
   } catch (error) {
     console.error("Failed to read leaderboard:", error);
@@ -62,6 +74,7 @@ app.post("/api/result", applyFirestoreRateLimit, async (req, res) => {
     };
 
     const record = await storage.saveResult(sanitizedPayload);
+    invalidateLeaderboardCache();
     res.status(201).json({
       message: "Result saved successfully.",
       record,
@@ -110,6 +123,7 @@ app.post("/api/reset", applyFirestoreRateLimit, async (req, res) => {
     }
 
     const deletedCount = await storage.resetLeaderboard();
+    invalidateLeaderboardCache();
     res.json({
       ok: true,
       message: "Leaderboard reset completed.",
@@ -147,9 +161,9 @@ function parseLimit(value) {
   return Math.max(1, Math.min(parsed, 500));
 }
 
-async function applyFirestoreRateLimit(req, res, next) {
+function applyFirestoreRateLimit(req, res, next) {
   try {
-    const result = await storage.checkRateLimit({
+    const result = checkInMemoryRateLimit({
       key: "firestore-api",
       ip: req.ip || req.socket?.remoteAddress || "unknown",
       limit: FIRESTORE_RATE_LIMIT_MAX_REQUESTS,
@@ -170,8 +184,8 @@ async function applyFirestoreRateLimit(req, res, next) {
     next();
   } catch (error) {
     console.error("Rate limit check failed:", error);
-    // Keep the API available even when the limiter backend is temporarily unhealthy.
-    res.setHeader("X-RateLimit-Bypass", "true");
+    // Keep the API available even when limiter state fails unexpectedly.
+    res.setHeader("X-RateLimit-Bypass", "memory-error");
     next();
   }
 }
@@ -255,4 +269,75 @@ function normalizeDifficulty(value) {
     return String(value).trim();
   }
   return "normal";
+}
+
+function getLeaderboardCache() {
+  if (!leaderboardCache.data) {
+    return null;
+  }
+
+  if (leaderboardCache.expiresAt <= Date.now()) {
+    leaderboardCache = { data: null, expiresAt: 0 };
+    return null;
+  }
+
+  return leaderboardCache.data;
+}
+
+function setLeaderboardCache(data) {
+  leaderboardCache = {
+    data,
+    expiresAt: Date.now() + LEADERBOARD_CACHE_TTL_MS,
+  };
+}
+
+function invalidateLeaderboardCache() {
+  leaderboardCache = { data: null, expiresAt: 0 };
+}
+
+function checkInMemoryRateLimit({ key, ip, limit, windowMs }) {
+  const now = Date.now();
+  const safeLimit = Math.max(1, Number(limit) || 1);
+  const safeWindowMs = Math.max(1000, Number(windowMs) || 60_000);
+  const bucket = Math.floor(now / safeWindowMs);
+  const resetAt = (bucket + 1) * safeWindowMs;
+  const id = `${String(key || "default")}:${String(ip || "unknown")}:${bucket}`;
+  const previousCount = Number(inMemoryRateLimits.get(id) || 0);
+
+  if (previousCount >= safeLimit) {
+    return {
+      allowed: false,
+      remaining: 0,
+      resetAt,
+      count: previousCount,
+      limit: safeLimit,
+    };
+  }
+
+  const nextCount = previousCount + 1;
+  inMemoryRateLimits.set(id, nextCount);
+  pruneOldRateLimitBuckets(bucket);
+
+  return {
+    allowed: true,
+    remaining: Math.max(0, safeLimit - nextCount),
+    resetAt,
+    count: nextCount,
+    limit: safeLimit,
+  };
+}
+
+function pruneOldRateLimitBuckets(activeBucket) {
+  // Keep this map bounded to avoid unbounded growth on long-running instances.
+  if (inMemoryRateLimits.size < 5000) {
+    return;
+  }
+
+  for (const key of inMemoryRateLimits.keys()) {
+    const parts = key.split(":");
+    const bucket = Number(parts[parts.length - 1]);
+    if (!Number.isFinite(bucket) || bucket < activeBucket - 1) {
+      inMemoryRateLimits.delete(key);
+    }
+  }
 }
