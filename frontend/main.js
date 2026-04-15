@@ -518,7 +518,11 @@ function renderQuestion() {
   roundChoices.forEach((choice, choiceIndex) => {
     const button = document.createElement("button");
     button.className = "choice-button";
-    button.innerHTML = `<strong>${choice.text}</strong><span>${choice.summary}</span>`;
+    const choiceTitle = document.createElement("strong");
+    choiceTitle.textContent = choice.text;
+    const choiceSummary = document.createElement("span");
+    choiceSummary.textContent = choice.summary;
+    button.append(choiceTitle, choiceSummary);
     button.addEventListener("click", () => {
       if (hasPickedChoice) {
         return;
@@ -765,12 +769,16 @@ function showResultScreen() {
   resultCityType.textContent = finalType.title;
   resultFeedback.textContent = `${finalType.description} 총점은 가중 평균 + 균형 보너스 + 난이도 보너스로 계산됩니다.`;
   resultScore.textContent = `총점: ${calculateTotalScore()}점`;
-  resultStats.innerHTML = Object.entries(stats)
-    .map(
-      ([name, value]) =>
-        `<div class="result-stat">${getStatLabel(name)}: <strong>${value}</strong></div>`,
-    )
-    .join("");
+  resultStats.replaceChildren();
+  Object.entries(stats).forEach(([name, value]) => {
+    const stat = document.createElement("div");
+    stat.className = "result-stat";
+    stat.append(`${getStatLabel(name)}: `);
+    const strong = document.createElement("strong");
+    strong.textContent = String(value);
+    stat.append(strong);
+    resultStats.appendChild(stat);
+  });
 
   updateCityVisual("result");
   saveStatus.textContent = "";
@@ -824,7 +832,7 @@ async function saveResult() {
 }
 
 async function fetchLeaderboard() {
-  leaderboardContent.innerHTML = `<div class="leaderboard-empty">리더보드를 불러오는 중입니다...</div>`;
+  setLeaderboardNotice("리더보드를 불러오는 중입니다...");
 
   try {
     const response = await requestApi("/api/leaderboard");
@@ -837,12 +845,9 @@ async function fetchLeaderboard() {
     renderLeaderboard(data);
   } catch (error) {
     console.error(error);
-    leaderboardContent.innerHTML = `
-      <div class="leaderboard-empty">
-        리더보드를 불러오지 못했습니다.<br />
-        API 경로(${formatApiBaseCandidates(API_BASE_CANDIDATES)})를 확인하세요.
-      </div>
-    `;
+    setLeaderboardNotice(
+      `리더보드를 불러오지 못했습니다.\nAPI 경로(${formatApiBaseCandidates(API_BASE_CANDIDATES)})를 확인하세요.`,
+    );
   }
 }
 
@@ -852,50 +857,69 @@ function renderLeaderboard(entries) {
   const hasAnyEntry = difficultyOrder.some((difficulty) => groupedEntries[difficulty].length > 0);
 
   if (!hasAnyEntry) {
-    leaderboardContent.innerHTML = `
-      <div class="leaderboard-empty">
-        아직 저장된 기록이 없습니다.<br />
-        게임을 끝내고 결과를 저장하면 첫 순위가 만들어집니다.
-      </div>
-    `;
+    setLeaderboardNotice("아직 저장된 기록이 없습니다.\n게임을 끝내고 결과를 저장하면 첫 순위가 만들어집니다.");
     return;
   }
 
-  leaderboardContent.innerHTML = difficultyOrder
-    .map((difficulty) => {
-      const sectionEntries = groupedEntries[difficulty];
+  leaderboardContent.replaceChildren();
+  difficultyOrder.forEach((difficulty) => {
+    const section = document.createElement("section");
+    section.className = "leaderboard-section";
 
-      if (sectionEntries.length === 0) {
-        return `
-          <section class="leaderboard-section">
-            <h3 class="leaderboard-section-title">${DIFFICULTY_LEVELS[difficulty].label}</h3>
-            <div class="leaderboard-empty">아직 저장된 기록이 없습니다.</div>
-          </section>
-        `;
-      }
+    const title = document.createElement("h3");
+    title.className = "leaderboard-section-title";
+    title.textContent = DIFFICULTY_LEVELS[difficulty].label;
+    section.appendChild(title);
 
-      const rows = sectionEntries
-        .map(
-          (entry, index) => `
-            <article class="leaderboard-row">
-              <div class="rank-chip">#${index + 1}</div>
-              <strong>${escapeHtml(entry.playerName)}</strong>
-              <span>${escapeHtml(entry.cityType)}</span>
-              <div class="score-chip">${entry.totalScore}</div>
-              <span>${formatDate(entry.timestamp)}</span>
-            </article>
-          `,
-        )
-        .join("");
+    const sectionEntries = groupedEntries[difficulty];
+    if (sectionEntries.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "leaderboard-empty";
+      empty.textContent = "아직 저장된 기록이 없습니다.";
+      section.appendChild(empty);
+      leaderboardContent.appendChild(section);
+      return;
+    }
 
-      return `
-        <section class="leaderboard-section">
-          <h3 class="leaderboard-section-title">${DIFFICULTY_LEVELS[difficulty].label}</h3>
-          ${rows}
-        </section>
-      `;
-    })
-    .join("");
+    sectionEntries.forEach((entry, index) => {
+      const row = document.createElement("article");
+      row.className = "leaderboard-row";
+
+      const rank = document.createElement("div");
+      rank.className = "rank-chip";
+      rank.textContent = `#${index + 1}`;
+
+      const player = document.createElement("strong");
+      player.textContent = String(entry.playerName || "");
+
+      const city = document.createElement("span");
+      city.textContent = String(entry.cityType || "");
+
+      const score = document.createElement("div");
+      score.className = "score-chip";
+      score.textContent = String(entry.totalScore);
+
+      const timestamp = document.createElement("span");
+      timestamp.textContent = formatDate(entry.timestamp);
+
+      row.append(rank, player, city, score, timestamp);
+      section.appendChild(row);
+    });
+
+    leaderboardContent.appendChild(section);
+  });
+}
+
+function setLeaderboardNotice(message) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "leaderboard-empty";
+  message.split("\n").forEach((line, index) => {
+    if (index > 0) {
+      wrapper.appendChild(document.createElement("br"));
+    }
+    wrapper.append(line);
+  });
+  leaderboardContent.replaceChildren(wrapper);
 }
 
 function normalizeLeaderboardEntries(entries) {
@@ -1069,15 +1093,6 @@ function formatDate(timestamp) {
     hour: "2-digit",
     minute: "2-digit",
   });
-}
-
-function escapeHtml(text) {
-  return String(text)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
 }
 
 function getRandomInt(min, max) {
