@@ -9,17 +9,16 @@ const RESET_PASSWORD = typeof process.env.RESET_PASSWORD === "string" ? process.
 const FIRESTORE_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 const FIRESTORE_RATE_LIMIT_MAX_REQUESTS = 20;
 const LEADERBOARD_CACHE_TTL_MS = 15 * 1000;
+const LEADERBOARD_CACHE_MAX_KEYS = 10;
 const storage = createStorage();
 const inMemoryRateLimits = new Map();
-let leaderboardCache = {
-  data: null,
-  expiresAt: 0,
-};
+const leaderboardCacheByLimit = new Map();
 
 app.disable("x-powered-by");
 app.set("trust proxy", true);
 app.use(cors());
 app.use(express.json({ limit: "64kb" }));
+app.use(setBasicSecurityHeaders);
 
 app.get("/api/health", async (req, res) => {
   try {
@@ -43,14 +42,14 @@ app.get("/api/health", async (req, res) => {
 
 app.get("/api/leaderboard", applyFirestoreRateLimit, async (req, res) => {
   try {
-    const cached = getLeaderboardCache();
+    const limit = parseLimit(req.query.limit);
+    const cached = getLeaderboardCache(limit);
     if (cached) {
       return res.json(cached);
     }
 
-    const limit = parseLimit(req.query.limit);
     const grouped = await storage.getLeaderboard(limit);
-    setLeaderboardCache(grouped);
+    setLeaderboardCache(limit, grouped);
     res.json(grouped);
   } catch (error) {
     console.error("Failed to read leaderboard:", error);
@@ -66,8 +65,8 @@ app.post("/api/result", applyFirestoreRateLimit, async (req, res) => {
     }
 
     const sanitizedPayload = {
-      playerName: req.body.playerName.trim(),
-      cityType: req.body.cityType.trim(),
+      playerName: sanitizeDisplayText(req.body.playerName),
+      cityType: sanitizeDisplayText(req.body.cityType),
       difficulty: normalizeDifficulty(req.body.difficulty),
       totalScore: clampNumber(req.body.totalScore, 0, 40000),
       stats: sanitizeStats(req.body.stats),
@@ -161,9 +160,9 @@ function parseLimit(value) {
   return Math.max(1, Math.min(parsed, 500));
 }
 
-function applyFirestoreRateLimit(req, res, next) {
+async function applyFirestoreRateLimit(req, res, next) {
   try {
-    const result = checkInMemoryRateLimit({
+    const result = await storage.checkRateLimit({
       key: "firestore-api",
       ip: req.ip || req.socket?.remoteAddress || "unknown",
       limit: FIRESTORE_RATE_LIMIT_MAX_REQUESTS,
@@ -184,15 +183,34 @@ function applyFirestoreRateLimit(req, res, next) {
     next();
   } catch (error) {
     console.error("Rate limit check failed:", error);
-    // Keep the API available even when limiter state fails unexpectedly.
-    res.setHeader("X-RateLimit-Bypass", "memory-error");
+    // Fallback to in-memory limiter when Firestore transactions are unavailable.
+    const fallbackResult = checkInMemoryRateLimit({
+      key: "firestore-api-fallback",
+      ip: req.ip || req.socket?.remoteAddress || "unknown",
+      limit: FIRESTORE_RATE_LIMIT_MAX_REQUESTS,
+      windowMs: FIRESTORE_RATE_LIMIT_WINDOW_MS,
+    });
+
+    setRateLimitHeaders(res, fallbackResult);
+    res.setHeader("X-RateLimit-Bypass", "firestore-unavailable");
+
+    if (!fallbackResult.allowed) {
+      res.status(429).json({
+        ok: false,
+        error: "Too many requests. Try again later.",
+        retryAfterSeconds: Math.max(1, Math.ceil((fallbackResult.resetAt - Date.now()) / 1000)),
+      });
+      return;
+    }
+
     next();
   }
 }
 
 function setRateLimitHeaders(res, result) {
   const remaining = Math.max(0, Number(result.remaining) || 0);
-  res.setHeader("X-RateLimit-Limit", String(FIRESTORE_RATE_LIMIT_MAX_REQUESTS));
+  const limit = Math.max(1, Number(result.limit) || FIRESTORE_RATE_LIMIT_MAX_REQUESTS);
+  res.setHeader("X-RateLimit-Limit", String(limit));
   res.setHeader("X-RateLimit-Remaining", String(remaining));
   res.setHeader("X-RateLimit-Reset", String(Math.ceil((Number(result.resetAt) || Date.now()) / 1000)));
 
@@ -207,16 +225,22 @@ function validateResult(body) {
     return { valid: false, message: "Invalid request body." };
   }
 
-  if (typeof body.playerName !== "string" || !body.playerName.trim()) {
+  const playerName = sanitizeDisplayText(body.playerName);
+  if (!playerName) {
     return { valid: false, message: "playerName is required." };
   }
 
-  if (body.playerName.trim().length > 20) {
+  if (playerName.length > 20) {
     return { valid: false, message: "playerName must be 20 characters or fewer." };
   }
 
-  if (typeof body.cityType !== "string" || !body.cityType.trim()) {
+  const cityType = sanitizeDisplayText(body.cityType);
+  if (!cityType) {
     return { valid: false, message: "cityType is required." };
+  }
+
+  if (cityType.length > 80) {
+    return { valid: false, message: "cityType must be 80 characters or fewer." };
   }
 
   if (!body.stats || typeof body.stats !== "object") {
@@ -260,6 +284,21 @@ function clampNumber(value, min, max) {
   return Math.max(min, Math.min(max, Math.round(numeric)));
 }
 
+function sanitizeDisplayText(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/[<>]/g, "");
+}
+
+function setBasicSecurityHeaders(req, res, next) {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  next();
+}
+
 function isValidDifficulty(value) {
   return ["easy", "normal", "hard"].includes(String(value || "").trim());
 }
@@ -271,28 +310,58 @@ function normalizeDifficulty(value) {
   return "normal";
 }
 
-function getLeaderboardCache() {
-  if (!leaderboardCache.data) {
+function getLeaderboardCache(limit) {
+  const key = getLeaderboardCacheKey(limit);
+  const cached = leaderboardCacheByLimit.get(key);
+  if (!cached) {
     return null;
   }
 
-  if (leaderboardCache.expiresAt <= Date.now()) {
-    leaderboardCache = { data: null, expiresAt: 0 };
+  if (cached.expiresAt <= Date.now()) {
+    leaderboardCacheByLimit.delete(key);
     return null;
   }
 
-  return leaderboardCache.data;
+  return cached.data;
 }
 
-function setLeaderboardCache(data) {
-  leaderboardCache = {
+function setLeaderboardCache(limit, data) {
+  const key = getLeaderboardCacheKey(limit);
+  leaderboardCacheByLimit.set(key, {
     data,
     expiresAt: Date.now() + LEADERBOARD_CACHE_TTL_MS,
-  };
+  });
+  pruneLeaderboardCache();
 }
 
 function invalidateLeaderboardCache() {
-  leaderboardCache = { data: null, expiresAt: 0 };
+  leaderboardCacheByLimit.clear();
+}
+
+function getLeaderboardCacheKey(limit) {
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 100, 500));
+  return String(safeLimit);
+}
+
+function pruneLeaderboardCache() {
+  if (leaderboardCacheByLimit.size <= LEADERBOARD_CACHE_MAX_KEYS) {
+    return;
+  }
+
+  const now = Date.now();
+  for (const [key, cacheEntry] of leaderboardCacheByLimit.entries()) {
+    if (!cacheEntry || cacheEntry.expiresAt <= now) {
+      leaderboardCacheByLimit.delete(key);
+    }
+  }
+
+  while (leaderboardCacheByLimit.size > LEADERBOARD_CACHE_MAX_KEYS) {
+    const oldestKey = leaderboardCacheByLimit.keys().next().value;
+    if (!oldestKey) {
+      break;
+    }
+    leaderboardCacheByLimit.delete(oldestKey);
+  }
 }
 
 function checkInMemoryRateLimit({ key, ip, limit, windowMs }) {
